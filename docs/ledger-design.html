@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>General Ledger Design</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        h3 { color: #7f8c8d; }
+        code { background: #f1f2f6; padding: 2px 6px; border-radius: 4px; }
+        pre { background: #2c3e50; color: #ecf0f1; padding: 20px; border-radius: 6px; overflow-x: auto; }
+        .mermaid { text-align: center; margin: 20px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background: #3498db; color: white; }
+        tr:nth-child(even) { background: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>General-Purpose Double-Entry, Multi-Currency Ledger – Design</h1>
+
+        <h2>Goals</h2>
+        <ul>
+            <li><strong>Double-entry</strong>: Every journal entry nets to zero on the functional currency, with clear debit/credit semantics.</li>
+            <li><strong>Multi-currency</strong>: Support account and line currencies, FX rates, revaluation, realized/unrealized gains/losses.</li>
+            <li><strong>Auditability</strong>: Append-only postings, immutable posted entries, period locks, full traceability.</li>
+            <li><strong>Performance</strong>: Event-style <code>POSTING</code> rows and incremental <code>BALANCE_SNAPSHOT</code> for fast reads.</li>
+            <li><strong>Extensibility</strong>: Dimensions/tags, hierarchical COA, multiple ledgers/tenants, idempotent APIs.</li>
+        </ul>
+
+        <h2>Core Concepts</h2>
+        <ul>
+            <li><strong>Ledger</strong>: Tenant-scoped book of record with a single functional currency and timezone.</li>
+            <li><strong>Chart of Accounts (COA)</strong>: Accounts with type and normal side, optional hierarchy, optional currency constraint.</li>
+            <li><strong>Journal Entry</strong>: User/API submitted document composed of lines. When posted, expands to atomic <code>POSTING</code>s.</li>
+            <li><strong>Posting</strong>: Immutable atomic effect on one account in one currency on a date.</li>
+            <li><strong>Balance Snapshot</strong>: Pre-aggregated balance per account and currency as of a date for read performance.</li>
+        </ul>
+
+        <h2>Entity Relationship Diagram</h2>
+        <div class="mermaid">
+erDiagram
+  TENANT ||--o{ LEDGER : owns
+  LEDGER ||--o{ ACCOUNT : contains
+  LEDGER ||--o{ PERIOD : has
+  LEDGER ||--o{ JOURNAL_ENTRY : groups
+  JOURNAL_ENTRY ||--|{ JOURNAL_LINE : has
+  ACCOUNT ||--o{ JOURNAL_LINE : booked_to
+  JOURNAL_LINE ||--|{ POSTING : expands_to
+  CURRENCY ||--o{ ACCOUNT : denominated_in
+  CURRENCY ||--o{ JOURNAL_LINE : in
+  CURRENCY ||--o{ POSTING : in
+  ACCOUNT ||--o{ BALANCE_SNAPSHOT : aggregates
+  LEDGER ||--o{ POSTING : produces
+  LEDGER ||--o{ BALANCE_SNAPSHOT : summarizes
+
+  TENANT {
+    uuid id PK
+    string name
+    json settings
+  }
+
+  LEDGER {
+    uuid id PK
+    uuid tenant_id FK
+    string name
+    string functional_currency_code
+    string timezone
+    json settings
+  }
+
+  ACCOUNT {
+    uuid id PK
+    uuid tenant_id FK
+    uuid ledger_id
+    string code
+    string name
+    string type
+    string normal_side
+    string currency_mode
+    string currency_code
+    boolean is_active
+    uuid parent_account_id
+  }
+
+  PERIOD {
+    uuid id PK
+    uuid tenant_id FK
+    uuid ledger_id
+    date start_date
+    date end_date
+    string status
+  }
+
+  JOURNAL_ENTRY {
+    uuid id PK
+    uuid tenant_id FK
+    uuid ledger_id
+    date accounting_date
+    date transaction_date
+    string status
+    long sequence_no
+    string external_id
+    string idempotency_key
+    string description
+    datetime posted_at
+    json metadata
+  }
+
+  JOURNAL_LINE {
+    uuid id PK
+    uuid tenant_id FK
+    uuid entry_id
+    uuid account_id
+    string direction
+    string currency_code
+    long amount_minor
+    decimal fx_rate
+    long functional_amount_minor
+    string memo
+    json dimensions
+  }
+
+  POSTING {
+    uuid id PK
+    uuid tenant_id FK
+    uuid ledger_id
+    uuid entry_id
+    uuid line_id
+    uuid account_id
+    date accounting_date
+    string currency_code
+    long amount_minor_signed
+    datetime posted_at
+  }
+
+  CURRENCY {
+    string code PK
+    string name
+    int exponent
+    string rounding_mode
+    decimal cash_rounding_increment
+    boolean is_obsolete
+  }
+
+  FX_RATE {
+    string base_code
+    string quote_code
+    date as_of
+    decimal rate
+    string source
+    datetime inserted_at
+  }
+
+  BALANCE_SNAPSHOT {
+    uuid tenant_id FK
+    uuid ledger_id
+    uuid account_id
+    string currency_code
+    date as_of_date
+    long debit_minor
+    long credit_minor
+    long balance_minor
+    int entry_count
+  }
+        </div>
+
+        <h2>Data Model Details</h2>
+        <ul>
+            <li><strong>Tenant</strong>: Multi-tenant boundary. All main tables include <code>tenant_id</code> for isolation and indexing.</li>
+            <li><strong>Ledger</strong>: <code>functional_currency_code</code>: Required base currency for balancing and reporting. <code>settings</code>: JSON for policies (e.g., revaluation method, rounding, default FX source).</li>
+            <li><strong>Account</strong>: <code>type</code>: ASSET | LIABILITY | EQUITY | REVENUE | EXPENSE | CONTRA. <code>normal_side</code>: DEBIT | CREDIT (e.g., ASSET→DEBIT, REVENUE→CREDIT). <code>currency_mode</code>: SINGLE | MULTI. If SINGLE, enforce line currency equals <code>currency_code</code>. <code>parent_account_id</code>: For hierarchical COA and roll-ups.</li>
+            <li><strong>Period</strong>: <code>status</code>: OPEN | CLOSED | LOCKED. Posting allowed only in OPEN.</li>
+            <li><strong>Journal Entry</strong>: <code>status</code>: DRAFT | POSTED | REVERSED | VOID. Immutable after POSTED. <code>sequence_no</code>: Monotonic per ledger, assigned at post time. <code>idempotency_key</code>: Uniqueness per ledger for create/post APIs.</li>
+            <li><strong>Journal Line</strong>: <code>direction</code>: DEBIT | CREDIT. <code>amount_minor</code>: Minor units of line currency (int64). <code>fx_rate</code>: Transaction→functional rate used; stored for audit. <code>functional_amount_minor</code>: Rounded minor units after applying <code>fx_rate</code>. <code>dimensions</code>: Optional JSON for tags (cost center, product, region).</li>
+            <li><strong>Posting</strong>: <code>amount_minor_signed</code>: Positive for DEBIT, negative for CREDIT, in the line currency. One posting per line; optional expansion for tax/allocations happens before posting.</li>
+        </ul>
+
+        <h2>Journal Line: Direction vs Debit/Credit Columns</h2>
+        <ul>
+            <li>Recommended shape for <code>JOURNAL_LINE</code>: Use <code>direction</code> (DEBIT|CREDIT) plus a single non-negative <code>amount_minor</code> in the line currency. Advantages: simpler validation (no both-sides populated), easier invariants (amount ≥ 1), clear intent, UI-friendly.</li>
+            <li>Recommended shape for <code>POSTING</code> (event rows): Use a single signed <code>amount_minor_signed</code> where debit = positive and credit = negative. This makes aggregation and running balances efficient.</li>
+            <li>Alternative API shape (if preferred): Accept <code>debit_minor</code> and <code>credit_minor</code> on the write API; validate exactly one is set; internally convert to <code>direction</code> + <code>amount_minor</code>.</li>
+        </ul>
+
+        <h2>Posting and Validation Rules</h2>
+        <ul>
+            <li><strong>Balancing</strong>: Sum(functional <code>functional_amount_minor</code> debits) = Sum(functional credits) = 0 net per <code>JOURNAL_ENTRY</code>. If all lines share the same non-functional currency and policy requires, optionally validate foreign-currency balance too.</li>
+            <li><strong>Account constraints</strong>: If account <code>currency_mode</code> = SINGLE, enforce line <code>currency_code</code> = account <code>currency_code</code>. Validate account is <code>is_active</code> and not in a CLOSED/LOCKED period.</li>
+            <li><strong>Rounding</strong>: Round per <code>CURRENCY.exponent</code> and <code>rounding_mode</code>. Any residual difference posted to a configured rounding account.</li>
+            <li><strong>Sequence and immutability</strong>: Assign <code>sequence_no</code> on post; prohibit edits to posted lines; allow formal reversals only.</li>
+        </ul>
+
+        <h2>Account Balances and Normal Side</h2>
+        <ul>
+            <li>Each account has a <code>normal_side</code> (DEBIT for Assets/Expenses, CREDIT for Liabilities/Equity/Revenue by default).</li>
+            <li>Balance in account currency:
+                <ul>
+                    <li>If <code>normal_side = DEBIT</code>: <code>balance_minor = SUM(max(amount_signed, 0)) - ABS(SUM(min(amount_signed, 0)))</code>.</li>
+                    <li>If <code>normal_side = CREDIT</code>: <code>balance_minor = ABS(SUM(min(amount_signed, 0))) - SUM(max(amount_signed, 0))</code>.</li>
+                </ul>
+            </li>
+            <li>Equivalent aggregation using separate totals:
+                <ul>
+                    <li><code>debit_minor = SUM(CASE WHEN amount_signed > 0 THEN amount_signed ELSE 0 END)</code></li>
+                    <li><code>credit_minor = ABS(SUM(CASE WHEN amount_signed < 0 THEN amount_signed ELSE 0 END))</code></li>
+                    <li>If <code>normal_side=DEBIT</code>: <code>balance = debit_minor - credit_minor</code>; else <code>balance = credit_minor - debit_minor</code>.</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>FX and Multi-Currency Handling</h2>
+        <ul>
+            <li><strong>Rates</strong>: Prefer direct pair (line currency → functional). If unavailable, triangulate via a configured base (e.g., USD or functional) with consistent rounding. <code>FX_RATE.as_of</code> selection: by <code>transaction_date</code> or <code>accounting_date</code> per policy; store source and rate used on each line.</li>
+            <li><strong>Functional amounts</strong>: <code>functional_amount_minor</code> = round(<code>amount_minor</code> × <code>fx_rate</code>). Entry must balance on functional amounts.</li>
+            <li><strong>Realized/Unrealized</strong>: Realized gains/losses recognized when monetary items are settled (e.g., AR/AP payment). Compute difference between historical and settlement functional amounts; post to FX gain/loss accounts. Period-end revaluation for monetary balances: create reversing entries at next period open.</li>
+        </ul>
+
+        <h2>Period Management</h2>
+        <ul>
+            <li>Periods cannot overlap. Only one OPEN period at a time per ledger unless policy allows back-posting.</li>
+            <li>Closing process: Lock period, run revaluation and accruals, post closing entries (e.g., income → retained earnings), then set to CLOSED.</li>
+            <li>Reversals: Two types: full reversal (mirror entry on a chosen date) and void (if never posted to balances or within same batch pre-close).</li>
+        </ul>
+
+        <h2>API Surface (HTTP or gRPC)</h2>
+        <ul>
+            <li><strong>Accounts</strong>: POST <code>/ledgers/{ledgerId}/accounts</code> create, GET <code>/ledgers/{ledgerId}/accounts</code> list/filter, PATCH <code>/accounts/{accountId}</code> update (name, active)</li>
+            <li><strong>Journal Entries</strong>: POST <code>/ledgers/{ledgerId}/journal-entries?post=true</code> create+post with <code>idempotency-key</code>, POST <code>/journal-entries/{id}/post</code> post draft, POST <code>/journal-entries/{id}/reverse</code> reverse on date, GET <code>/journal-entries</code> query by date, status, external_id</li>
+            <li><strong>FX Rates</strong>: POST <code>/fx/rates</code> upsert, GET <code>/fx/rates?base=EUR&quote=USD&as_of=2025-03-10</code></li>
+            <li><strong>Periods</strong>: POST <code>/ledgers/{ledgerId}/periods</code> open, POST <code>/periods/{id}/close</code> close & lock</li>
+            <li><strong>Balances & Reports</strong>: GET <code>/balances/trial?as_of=...</code>, GET <code>/accounts/{id}/statement?from=...&to=...</code>, GET <code>/balances/snapshots?date=...</code></li>
+        </ul>
+
+        <h2>Reporting</h2>
+        <ul>
+            <li><strong>Trial balance</strong>: Aggregate <code>POSTING</code> or <code>BALANCE_SNAPSHOT</code> by account, by currency and functional.</li>
+            <li><strong>Account statement</strong>: Chronological postings with running balance.</li>
+            <li><strong>Aged AR/AP</strong>: Use dimensions and counterparties; aging buckets.</li>
+            <li><strong>Multi-currency</strong>: Show native currency balances and translated functional amounts with disclosed rates.</li>
+        </ul>
+
+        <h2>Indexing and Storage Strategy (for PostgreSQL)</h2>
+        <ul>
+            <li>Partition or cluster by <code>ledger_id</code>.</li>
+            <li>Indexes: Prefix all main indexes with <code>tenant_id</code>.
+                <ul>
+                    <li><code>POSTING(tenant_id, ledger_id, account_id, currency_code, accounting_date)</code></li>
+                    <li><code>JOURNAL_ENTRY(tenant_id, ledger_id, accounting_date, status)</code></li>
+                    <li><code>JOURNAL_ENTRY(tenant_id, ledger_id, idempotency_key)</code> UNIQUE</li>
+                    <li><code>ACCOUNT(tenant_id, ledger_id, code)</code> UNIQUE</li>
+                    <li><code>FX_RATE(base_code, quote_code, as_of)</code> UNIQUE</li>
+                </ul>
+            </li>
+            <li>Consider table partitioning by month/quarter for <code>POSTING</code> on large ledgers.</li>
+        </ul>
+
+        <h2>Multi-Tenancy</h2>
+        <ul>
+            <li>Add <code>tenant_id</code> to all main tables; <code>LEDGER.tenant_id</code> is required and all child rows inherit the same <code>tenant_id</code>.</li>
+            <li>Enforce composite uniqueness with <code>tenant_id</code> to avoid cross-tenant collisions.</li>
+            <li>Apply Row-Level Security (RLS) in PostgreSQL using a session variable/JWT claim <code>app.tenant_id</code>.</li>
+            <li>Ensure all queries include <code>tenant_id</code> predicate, and all foreign keys include <code>(tenant_id, parent_id)</code> pairs where applicable.</li>
+        </ul>
+
+        <h2>Concurrency and Idempotency</h2>
+        <ul>
+            <li>Require <code>Idempotency-Key</code> header for create/post; deduplicate per ledger.</li>
+            <li>Use optimistic concurrency on draft entries; assign <code>sequence_no</code> under transaction at post.</li>
+        </ul>
+
+        <h2>Security and Audit</h2>
+        <ul>
+            <li>Store <code>posted_at</code> and <code>posted_by</code> (user/service principal).</li>
+            <li>Immutable posted entries; any change via reversal/new entry.</li>
+            <li>Period LOCK prevents further postings unless override role.</li>
+        </ul>
+
+        <h2>Example Posting (Purchase in EUR, functional USD)</h2>
+        <p>Assume purchase expense of €100 at 1.10 USD/EUR on 2025-01-05, paid later.</p>
+        <ul>
+            <li>Lines on 2025-01-05:
+                <ul>
+                    <li>DR <code>Expense:Supplies</code> €100 (fx 1.10 → $110)</li>
+                    <li>CR <code>AP:EUR</code> €100 (fx 1.10 → $110)</li>
+                </ul>
+            </li>
+            <li>Payment on 2025-01-20 at 1.12 USD/EUR:
+                <ul>
+                    <li>DR <code>AP:EUR</code> €100 (historical $110)</li>
+                    <li>CR <code>Cash:Bank:EUR</code> €100 (current $112)</li>
+                    <li>DR <code>FX Loss</code> $2 (realized)</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>Non-Functional</h2>
+        <ul>
+            <li>Deterministic rounding and FX source; time-zone aware <code>accounting_date</code>.</li>
+            <li>Throughput via append-only <code>POSTING</code>, batched snapshot updates, async read models if needed.</li>
+        </ul>
+
+        <h2>Implementation Notes (Spring Boot)</h2>
+        <ul>
+            <li>Use <code>long</code> for minor units; <code>BigDecimal</code> for FX rate; validate exponents.</li>
+            <li>Enforce rules in service layer with transactional boundaries; DB constraints mirror invariants.</li>
+            <li>Provide migration scripts creating the above schema (Flyway/Liquibase).</li>
+        </ul>
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: { useMaxWidth: true }
+        });
+    </script>
+</body>
+</html>
