@@ -1,7 +1,6 @@
 package com.cxm360.ai.ledger.validation;
 
 import com.cxm360.ai.ledger.model.*;
-import com.cxm360.ai.ledger.model.enums.AccountType;
 import com.cxm360.ai.ledger.model.enums.CurrencyMode;
 import com.cxm360.ai.ledger.model.enums.JournalEntryStatus;
 import com.cxm360.ai.ledger.model.enums.NormalSide;
