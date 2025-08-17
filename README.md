@@ -105,6 +105,25 @@ make docker-build       # Build and start services
 make docker-rebuild     # Rebuild and restart services
 ```
 
+### Log Management
+```bash
+# View all service logs (real-time)
+make logs               # Follow all logs
+make logs-tail          # Last 100 lines of all logs
+
+# View specific service logs
+make logs-app           # Follow ledger app logs only
+make logs-db            # Follow PostgreSQL logs only
+make logs-app-tail      # Last 100 lines of app logs
+make logs-db-tail       # Last 100 lines of database logs
+
+# Direct Docker Compose commands
+docker compose logs -f postgres          # Follow PostgreSQL logs
+docker compose logs -f ledger            # Follow ledger app logs
+docker compose logs --tail=50 postgres   # Last 50 lines of PostgreSQL
+docker compose logs --since="1h" ledger  # App logs from last hour
+```
+
 ### Application Development
 ```bash
 make build             # Build the application
@@ -157,6 +176,24 @@ The application provides several actuator endpoints for monitoring:
 - **`/actuator/info`** - Application information
 - **`/actuator/env`** - Environment variables
 - **`/actuator/configprops`** - Configuration properties
+
+### Discovering Actuator Endpoints
+```bash
+# List all available endpoints
+make actuator
+
+# Show raw actuator index
+make actuator-raw
+
+# Test specific endpoints
+make health          # Overall health
+make health-db       # Database health
+
+# Direct access
+curl http://localhost:8080/actuator          # Actuator index
+curl http://localhost:8080/actuator/health   # Health status
+curl http://localhost:8080/actuator/info     # App info
+```
 
 ### Common Issues
 1. **Port conflicts**: Change ports in `.env` file

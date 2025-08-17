@@ -29,6 +29,20 @@ help:
 	@echo "  docker-rebuild  Rebuild and restart all services"
 	@echo "  env             Create .env from .env.example if missing"
 	@echo ""
+	@echo "Log Management:"
+	@echo "  logs            View all service logs (follow mode)"
+	@echo "  logs-app        View only ledger app logs (follow mode)"
+	@echo "  logs-db         View only PostgreSQL logs (follow mode)"
+	@echo "  logs-tail       View last 100 lines of all logs"
+	@echo "  logs-app-tail   View last 100 lines of app logs"
+	@echo "  logs-db-tail    View last 100 lines of database logs"
+	@echo ""
+	@echo "Actuator Endpoints:"
+	@echo "  actuator        List all available actuator endpoints"
+	@echo "  actuator-raw    Show raw actuator index response"
+	@echo "  health          Show application health status"
+	@echo "  health-db       Show database health status"
+	@echo ""
 	@echo "Database Management (Liquibase):"
 	@echo "  liquibase-status   Check Liquibase changelog status"
 	@echo "  liquibase-update   Apply pending Liquibase changes"
@@ -107,6 +121,48 @@ docker-build: env
 docker-rebuild: env
 	docker compose down
 	docker compose up -d --build
+
+# Log viewing commands
+logs:
+	docker compose logs -f
+
+logs-app:
+	docker compose logs -f ledger
+
+logs-db:
+	docker compose logs -f postgres
+
+logs-tail:
+	docker compose logs --tail=100
+
+logs-app-tail:
+	docker compose logs --tail=100 ledger
+
+logs-db-tail:
+	docker compose logs --tail=100 postgres
+
+# Actuator endpoint discovery
+actuator:
+	@echo "🔍 Available Actuator Endpoints:" && \
+	echo "  • /actuator/health - Overall health status" && \
+	echo "  • /actuator/health/db - Database health" && \
+	echo "  • /actuator/info - Application information" && \
+	echo "  • /actuator/configprops - Configuration properties" && \
+	echo "  • /actuator/env - Environment variables" && \
+	echo "" && \
+	echo "🔗 Actuator Index: http://localhost:8080/actuator"
+
+actuator-raw:
+	@echo "🔍 Raw Actuator Response:" && \
+	curl -s http://localhost:8080/actuator
+
+health:
+	@echo "🏥 Application Health:" && \
+	curl -s http://localhost:8080/actuator/health
+
+health-db:
+	@echo "🗄️  Database Health:" && \
+	curl -s http://localhost:8080/actuator/health/db
 
 env:
 	@if [ ! -f .env ]; then \
