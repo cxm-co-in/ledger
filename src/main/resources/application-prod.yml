@@ -1,0 +1,17 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  
+  # Production logging
+  logging:
+    level:
+      com.cxm360.ai.ledger: INFO
+      org.springframework.web: WARN
+  
+  # Production JPA settings
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false

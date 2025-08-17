@@ -1,0 +1,22 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+  
+  # Test-specific JPA settings
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+  
+  # Test logging
+  logging:
+    level:
+      com.cxm360.ai.ledger: WARN
+      org.springframework.web: WARN
+  
+  # Disable DevTools for tests
+  devtools:
+    restart:
+      enabled: false

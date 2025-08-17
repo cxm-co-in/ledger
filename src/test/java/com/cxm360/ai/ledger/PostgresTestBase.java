@@ -1,4 +1,4 @@
-package dev.tarunagrawal.generalledger;
+package com.cxm360.ai.ledger;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

@@ -1,0 +1,30 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+  
+  # Liquibase context for development
+  liquibase:
+    contexts: dev
+  
+  # Development-specific JPA settings
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  
+  # Development logging
+  logging:
+    level:
+      org.springframework.web: DEBUG
+      com.cxm360.ai.ledger: DEBUG
+      org.hibernate.orm.connections.pooling: WARN
+      org.hibernate.orm.connections: WARN
+  
+  # Actuator endpoints for development
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: health,info,env,configprops

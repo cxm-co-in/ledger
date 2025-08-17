@@ -1,13 +1,13 @@
-package dev.tarunagrawal.generalledger;
+package com.cxm360.ai.ledger;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class GeneralLedgerApplication {
+public class LedgerApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(GeneralLedgerApplication.class, args);
+		SpringApplication.run(LedgerApplication.class, args);
 	}
 
 }
