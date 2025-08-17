@@ -6,86 +6,97 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <changeSet id="002-sample-data" author="system">
-        <comment>Insert sample data for testing</comment>
+        <comment>Insert sample data for currencies and basic setup</comment>
 
-        <!-- Sample Tenant -->
-        <insert tableName="tenant">
-            <column name="id" value="550e8400-e29b-41d4-a716-446655440000"/>
-            <column name="name" value="Acme Corporation"/>
-            <column name="code" value="ACME"/>
-            <column name="settings" value='{"timezone": "UTC", "defaultCurrency": "USD", "features": {"multiCurrency": true, "auditTrail": true}}'/>
+        <!-- Insert basic currencies -->
+        <insert tableName="currency">
+            <column name="code" value="USD"/>
+            <column name="name" value="US Dollar"/>
+            <column name="exponent" value="2"/>
+            <column name="rounding_mode" value="HALF_UP"/>
+            <column name="cash_rounding_increment" value="0.01"/>
+            <column name="is_obsolete" value="false"/>
         </insert>
 
-        <!-- Sample Ledger -->
-        <insert tableName="ledger">
-            <column name="id" value="550e8400-e29b-41d4-a716-446655440001"/>
-            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440000"/>
-            <column name="name" value="General Ledger"/>
-            <column name="code" value="GL"/>
-            <column name="description" value="Main general ledger for Acme Corporation"/>
-            <column name="settings" value='{"fiscalYearStart": "2024-01-01", "reportingCurrency": "USD"}'/>
-            <column name="is_active" valueBoolean="true"/>
+        <insert tableName="currency">
+            <column name="code" value="EUR"/>
+            <column name="name" value="Euro"/>
+            <column name="exponent" value="2"/>
+            <column name="rounding_mode" value="HALF_UP"/>
+            <column name="cash_rounding_increment" value="0.01"/>
+            <column name="is_obsolete" value="false"/>
         </insert>
 
-        <!-- Sample Period -->
-        <insert tableName="period">
-            <column name="id" value="550e8400-e29b-41d4-a716-446655440002"/>
-            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440000"/>
-            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440001"/>
-            <column name="name" value="Q1 2024"/>
-            <column name="start_date" value="2024-01-01"/>
-            <column name="end_date" value="2024-03-31"/>
-            <column name="status" value="OPEN"/>
+        <insert tableName="currency">
+            <column name="code" value="GBP"/>
+            <column name="name" value="British Pound"/>
+            <column name="exponent" value="2"/>
+            <column name="rounding_mode" value="HALF_UP"/>
+            <column name="cash_rounding_increment" value="0.01"/>
+            <column name="is_obsolete" value="false"/>
         </insert>
 
-        <!-- Sample Accounts -->
-        <insert tableName="account">
-            <column name="id" value="550e8400-e29b-41d4-a716-446655440003"/>
-            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440000"/>
-            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440001"/>
-            <column name="name" value="Cash"/>
-            <column name="code" value="1000"/>
-            <column name="type" value="ASSET"/>
-            <column name="normal_side" value="DEBIT"/>
-            <column name="currency_mode" value="SINGLE"/>
-            <column name="currency_code" value="USD"/>
-            <column name="is_active" valueBoolean="true"/>
+        <insert tableName="currency">
+            <column name="code" value="JPY"/>
+            <column name="name" value="Japanese Yen"/>
+            <column name="exponent" value="0"/>
+            <column name="rounding_mode" value="HALF_UP"/>
+            <column name="cash_rounding_increment" value="1"/>
+            <column name="is_obsolete" value="false"/>
         </insert>
 
-        <insert tableName="account">
-            <column name="id" value="550e8400-e29b-41d4-a716-446655440004"/>
-            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440000"/>
-            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440001"/>
-            <column name="name" value="Accounts Receivable"/>
-            <column name="code" value="1100"/>
-            <column name="type" value="ASSET"/>
-            <column name="normal_side" value="DEBIT"/>
-            <column name="currency_mode" value="SINGLE"/>
-            <column name="currency_code" value="USD"/>
-            <column name="is_active" valueBoolean="true"/>
+        <insert tableName="currency">
+            <column name="code" value="CAD"/>
+            <column name="name" value="Canadian Dollar"/>
+            <column name="exponent" value="2"/>
+            <column name="rounding_mode" value="HALF_UP"/>
+            <column name="cash_rounding_increment" value="0.01"/>
+            <column name="is_obsolete" value="false"/>
         </insert>
 
-        <insert tableName="account">
-            <column name="id" value="550e8400-e29b-41d4-a716-446655440005"/>
-            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440000"/>
-            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440001"/>
-            <column name="name" value="Revenue"/>
-            <column name="code" value="4000"/>
-            <column name="type" value="REVENUE"/>
-            <column name="normal_side" value="CREDIT"/>
-            <column name="currency_mode" value="SINGLE"/>
-            <column name="currency_code" value="USD"/>
-            <column name="is_active" valueBoolean="true"/>
+        <insert tableName="currency">
+            <column name="code" value="AUD"/>
+            <column name="name" value="Australian Dollar"/>
+            <column name="exponent" value="2"/>
+            <column name="rounding_mode" value="HALF_UP"/>
+            <column name="cash_rounding_increment" value="0.01"/>
+            <column name="is_obsolete" value="false"/>
         </insert>
 
-        <!-- Sample Party -->
-        <insert tableName="party">
-            <column name="id" value="550e8400-e29b-41d4-a716-446655440006"/>
-            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440000"/>
-            <column name="name" value="John Doe"/>
-            <column name="type" value="CUSTOMER"/>
-            <column name="contact_details" value='{"email": "john@example.com", "phone": "+1-555-0123", "address": {"street": "123 Main St", "city": "Anytown", "zip": "12345"}}'/>
-            <column name="is_active" valueBoolean="true"/>
+        <insert tableName="currency">
+            <column name="code" value="CHF"/>
+            <column name="name" value="Swiss Franc"/>
+            <column name="exponent" value="2"/>
+            <column name="rounding_mode" value="HALF_UP"/>
+            <column name="cash_rounding_increment" value="0.01"/>
+            <column name="is_obsolete" value="false"/>
+        </insert>
+
+        <insert tableName="currency">
+            <column name="code" value="CNY"/>
+            <column name="name" value="Chinese Yuan"/>
+            <column name="exponent" value="2"/>
+            <column name="rounding_mode" value="HALF_UP"/>
+            <column name="cash_rounding_increment" value="0.01"/>
+            <column name="is_obsolete" value="false"/>
+        </insert>
+
+        <insert tableName="currency">
+            <column name="code" value="INR"/>
+            <column name="name" value="Indian Rupee"/>
+            <column name="exponent" value="2"/>
+            <column name="rounding_mode" value="HALF_UP"/>
+            <column name="cash_rounding_increment" value="0.01"/>
+            <column name="is_obsolete" value="false"/>
+        </insert>
+
+        <insert tableName="currency">
+            <column name="code" value="BRL"/>
+            <column name="name" value="Brazilian Real"/>
+            <column name="exponent" value="2"/>
+            <column name="rounding_mode" value="HALF_UP"/>
+            <column name="cash_rounding_increment" value="0.01"/>
+            <column name="is_obsolete" value="false"/>
         </insert>
 
     </changeSet>

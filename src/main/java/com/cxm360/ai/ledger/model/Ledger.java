@@ -45,8 +45,9 @@ public class Ledger {
      * The functional currency for this ledger (e.g., "USD", "EUR").
      * All journal entries must balance in this currency.
      */
-    @Column(name = "functional_currency_code", nullable = false)
-    private String functionalCurrencyCode;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "functional_currency_code", nullable = false)
+    private Currency functionalCurrency;
 
     /**
      * The timezone for this ledger's accounting dates (e.g., "UTC", "America/New_York").

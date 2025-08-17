@@ -32,20 +32,25 @@ public class Posting {
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
 
-    @Column(name = "ledger_id", nullable = false)
-    private UUID ledgerId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ledger_id", nullable = false)
+    private Ledger ledger;
 
-    @Column(name = "entry_id", nullable = false)
-    private UUID entryId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "entry_id", nullable = false)
+    private JournalEntry journalEntry;
 
-    @Column(name = "line_id", nullable = false)
-    private UUID lineId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "line_id", nullable = false)
+    private JournalLine journalLine;
 
-    @Column(name = "account_id", nullable = false)
-    private UUID accountId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id", nullable = false)
+    private Account account;
 
-    @Column(name = "party_id")
-    private UUID partyId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "party_id")
+    private Party party;
 
     @Column(name = "accounting_date", nullable = false)
     private LocalDate accountingDate;

@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
@@ -36,10 +37,17 @@ public class Period {
     private Tenant tenant;
 
     /**
-     * The identifier for the ledger this period is associated with.
+     * The ledger this period is associated with.
      */
-    @Column(name = "ledger_id", nullable = false)
-    private UUID ledgerId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ledger_id", nullable = false)
+    private Ledger ledger;
+
+    /**
+     * The name of the period (e.g., "Q1 2024", "January 2024").
+     */
+    @Column(nullable = false)
+    private String name;
 
     /**
      * The start date of the financial period (inclusive).
@@ -60,4 +68,26 @@ public class Period {
     @Column(nullable = false)
     private PeriodStatus status;
 
+    /**
+     * Timestamp when the period was created.
+     */
+    @Column(name = "created_at", nullable = false)
+    private OffsetDateTime createdAt;
+
+    /**
+     * Timestamp when the period was last updated.
+     */
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = OffsetDateTime.now();
+        updatedAt = OffsetDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = OffsetDateTime.now();
+    }
 }

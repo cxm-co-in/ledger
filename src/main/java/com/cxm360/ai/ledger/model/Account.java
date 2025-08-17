@@ -37,10 +37,11 @@ public class Account {
     private Tenant tenant;
 
     /**
-     * The identifier for the ledger this account is a part of.
+     * The ledger this account is a part of.
      */
-    @Column(name = "ledger_id", nullable = false)
-    private UUID ledgerId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ledger_id", nullable = false)
+    private Ledger ledger;
 
     /**
      * A unique code for the account (e.g., "1010", "6050").
@@ -99,11 +100,11 @@ public class Account {
     // once the Ledger entity itself has been created.
     
     /**
-     * Set the ledger ID for this account.
+     * Set the ledger for this account.
      * This method is needed for service layer operations.
      */
-    public void setLedgerId(UUID ledgerId) {
-        this.ledgerId = ledgerId;
+    public void setLedger(Ledger ledger) {
+        this.ledger = ledger;
     }
     
     /**

@@ -6,7 +6,7 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <changeSet id="001-initial-schema" author="system">
-        <comment>Create initial database schema for General Ledger System</comment>
+        <comment>Create initial database schema for General Ledger System aligned with design document</comment>
 
         <!-- Create Tenant table -->
         <createTable tableName="tenant">
@@ -16,10 +16,33 @@
             <column name="name" type="varchar(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="code" type="varchar(50)">
-                <constraints nullable="false" unique="true"/>
-            </column>
             <column name="settings" type="jsonb"/>
+            <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Create Currency table -->
+        <createTable tableName="currency">
+            <column name="code" type="varchar(3)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="exponent" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rounding_mode" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cash_rounding_increment" type="decimal(19,4)"/>
+            <column name="is_obsolete" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
@@ -39,12 +62,39 @@
             <column name="name" type="varchar(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="code" type="varchar(50)">
+            <column name="functional_currency_code" type="varchar(3)">
                 <constraints nullable="false"/>
             </column>
-            <column name="description" type="text"/>
+            <column name="timezone" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
             <column name="settings" type="jsonb"/>
-            <column name="is_active" type="boolean" defaultValueBoolean="true">
+            <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Create Period table -->
+        <createTable tableName="period">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="tenant_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ledger_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="start_date" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="end_date" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="varchar(50)">
                 <constraints nullable="false"/>
             </column>
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
@@ -69,41 +119,8 @@
             <column name="type" type="varchar(50)">
                 <constraints nullable="false"/>
             </column>
+            <column name="external_id" type="varchar(255)"/>
             <column name="contact_details" type="jsonb"/>
-            <column name="is_active" type="boolean" defaultValueBoolean="true">
-                <constraints nullable="false"/>
-            </column>
-            <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
-                <constraints nullable="false"/>
-            </column>
-            <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-
-        <!-- Create Period table -->
-        <createTable tableName="period">
-            <column name="id" type="uuid">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="tenant_id" type="uuid">
-                <constraints nullable="false"/>
-            </column>
-            <column name="ledger_id" type="uuid">
-                <constraints nullable="false"/>
-            </column>
-            <column name="name" type="varchar(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="start_date" type="date">
-                <constraints nullable="false"/>
-            </column>
-            <column name="end_date" type="date">
-                <constraints nullable="false"/>
-            </column>
-            <column name="status" type="varchar(50)">
-                <constraints nullable="false"/>
-            </column>
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
@@ -123,11 +140,10 @@
             <column name="ledger_id" type="uuid">
                 <constraints nullable="false"/>
             </column>
-            <column name="parent_account_id" type="uuid"/>
-            <column name="name" type="varchar(255)">
+            <column name="code" type="varchar(50)">
                 <constraints nullable="false"/>
             </column>
-            <column name="code" type="varchar(50)">
+            <column name="name" type="varchar(255)">
                 <constraints nullable="false"/>
             </column>
             <column name="type" type="varchar(50)">
@@ -145,6 +161,7 @@
             <column name="is_active" type="boolean" defaultValueBoolean="true">
                 <constraints nullable="false"/>
             </column>
+            <column name="parent_account_id" type="uuid"/>
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
@@ -164,19 +181,19 @@
             <column name="ledger_id" type="uuid">
                 <constraints nullable="false"/>
             </column>
-            <column name="period_id" type="uuid">
+            <column name="accounting_date" type="date">
                 <constraints nullable="false"/>
             </column>
-            <column name="entry_number" type="varchar(100)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="entry_date" type="date">
-                <constraints nullable="false"/>
-            </column>
-            <column name="description" type="text"/>
+            <column name="transaction_date" type="date"/>
             <column name="status" type="varchar(50)">
                 <constraints nullable="false"/>
             </column>
+            <column name="sequence_no" type="bigint"/>
+            <column name="external_id" type="varchar(255)"/>
+            <column name="idempotency_key" type="varchar(255)"/>
+            <column name="description" type="text"/>
+            <column name="posted_at" type="timestamp"/>
+            <column name="metadata" type="jsonb"/>
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
@@ -193,19 +210,26 @@
             <column name="tenant_id" type="uuid">
                 <constraints nullable="false"/>
             </column>
-            <column name="journal_entry_id" type="uuid">
+            <column name="entry_id" type="uuid">
                 <constraints nullable="false"/>
             </column>
             <column name="account_id" type="uuid">
                 <constraints nullable="false"/>
             </column>
-            <column name="debit_amount" type="decimal(19,4)" defaultValueNumeric="0">
+            <column name="party_id" type="uuid"/>
+            <column name="direction" type="varchar(10)">
                 <constraints nullable="false"/>
             </column>
-            <column name="credit_amount" type="decimal(19,4)" defaultValueNumeric="0">
+            <column name="currency_code" type="varchar(3)">
                 <constraints nullable="false"/>
             </column>
-            <column name="description" type="text"/>
+            <column name="amount_minor" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fx_rate" type="decimal(19,6)"/>
+            <column name="functional_amount_minor" type="bigint"/>
+            <column name="memo" type="text"/>
+            <column name="dimensions" type="jsonb"/>
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
@@ -222,22 +246,86 @@
             <column name="tenant_id" type="uuid">
                 <constraints nullable="false"/>
             </column>
-            <column name="journal_line_id" type="uuid">
+            <column name="ledger_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entry_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="line_id" type="uuid">
                 <constraints nullable="false"/>
             </column>
             <column name="account_id" type="uuid">
                 <constraints nullable="false"/>
             </column>
-            <column name="period_id" type="uuid">
+            <column name="party_id" type="uuid"/>
+            <column name="accounting_date" type="date">
                 <constraints nullable="false"/>
             </column>
-            <column name="debit_amount" type="decimal(19,4)" defaultValueNumeric="0">
+            <column name="currency_code" type="varchar(3)">
                 <constraints nullable="false"/>
             </column>
-            <column name="credit_amount" type="decimal(19,4)" defaultValueNumeric="0">
+            <column name="amount_minor_signed" type="bigint">
                 <constraints nullable="false"/>
             </column>
-            <column name="balance" type="decimal(19,4)" defaultValueNumeric="0">
+            <column name="posted_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Create FX_RATE table -->
+        <createTable tableName="fx_rate">
+            <column name="base_code" type="varchar(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quote_code" type="varchar(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="as_of" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rate" type="decimal(19,6)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="source" type="varchar(100)"/>
+            <column name="inserted_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Create BALANCE_SNAPSHOT table -->
+        <createTable tableName="balance_snapshot">
+            <column name="tenant_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ledger_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="account_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="currency_code" type="varchar(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="as_of_date" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="debit_minor" type="bigint" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="credit_minor" type="bigint" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="balance_minor" type="bigint" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entry_count" type="int" defaultValueNumeric="0">
                 <constraints nullable="false"/>
             </column>
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
@@ -259,10 +347,10 @@
                                 referencedTableName="tenant" referencedColumnNames="id"
                                 constraintName="fk_ledger_tenant"/>
 
-        <!-- Party -> Tenant -->
-        <addForeignKeyConstraint baseTableName="party" baseColumnNames="tenant_id"
-                                referencedTableName="tenant" referencedColumnNames="id"
-                                constraintName="fk_party_tenant"/>
+        <!-- Ledger -> Currency -->
+        <addForeignKeyConstraint baseTableName="ledger" baseColumnNames="functional_currency_code"
+                                referencedTableName="currency" referencedColumnNames="code"
+                                constraintName="fk_ledger_currency"/>
 
         <!-- Period -> Tenant, Ledger -->
         <addForeignKeyConstraint baseTableName="period" baseColumnNames="tenant_id"
@@ -272,7 +360,12 @@
                                 referencedTableName="ledger" referencedColumnNames="id"
                                 constraintName="fk_period_ledger"/>
 
-        <!-- Account -> Tenant, Ledger, Parent Account -->
+        <!-- Party -> Tenant -->
+        <addForeignKeyConstraint baseTableName="party" baseColumnNames="tenant_id"
+                                referencedTableName="tenant" referencedColumnNames="id"
+                                constraintName="fk_party_tenant"/>
+
+        <!-- Account -> Tenant, Ledger, Parent Account, Currency -->
         <addForeignKeyConstraint baseTableName="account" baseColumnNames="tenant_id"
                                 referencedTableName="tenant" referencedColumnNames="id"
                                 constraintName="fk_account_tenant"/>
@@ -282,42 +375,71 @@
         <addForeignKeyConstraint baseTableName="account" baseColumnNames="parent_account_id"
                                 referencedTableName="account" referencedColumnNames="id"
                                 constraintName="fk_account_parent"/>
+        <addForeignKeyConstraint baseTableName="account" baseColumnNames="currency_code"
+                                referencedTableName="currency" referencedColumnNames="code"
+                                constraintName="fk_account_currency"/>
 
-        <!-- JournalEntry -> Tenant, Ledger, Period -->
+        <!-- JournalEntry -> Tenant, Ledger -->
         <addForeignKeyConstraint baseTableName="journal_entry" baseColumnNames="tenant_id"
                                 referencedTableName="tenant" referencedColumnNames="id"
                                 constraintName="fk_journal_entry_tenant"/>
         <addForeignKeyConstraint baseTableName="journal_entry" baseColumnNames="ledger_id"
                                 referencedTableName="ledger" referencedColumnNames="id"
                                 constraintName="fk_journal_entry_ledger"/>
-        <addForeignKeyConstraint baseTableName="journal_entry" baseColumnNames="period_id"
-                                referencedTableName="period" referencedColumnNames="id"
-                                constraintName="fk_journal_entry_period"/>
 
-        <!-- JournalLine -> Tenant, JournalEntry, Account -->
+        <!-- JournalLine -> Tenant, JournalEntry, Account, Party, Currency -->
         <addForeignKeyConstraint baseTableName="journal_line" baseColumnNames="tenant_id"
                                 referencedTableName="tenant" referencedColumnNames="id"
                                 constraintName="fk_journal_line_tenant"/>
-        <addForeignKeyConstraint baseTableName="journal_line" baseColumnNames="journal_entry_id"
+        <addForeignKeyConstraint baseTableName="journal_line" baseColumnNames="entry_id"
                                 referencedTableName="journal_entry" referencedColumnNames="id"
                                 constraintName="fk_journal_line_journal_entry"/>
         <addForeignKeyConstraint baseTableName="journal_line" baseColumnNames="account_id"
                                 referencedTableName="account" referencedColumnNames="id"
                                 constraintName="fk_journal_line_account"/>
+        <addForeignKeyConstraint baseTableName="journal_line" baseColumnNames="party_id"
+                                referencedTableName="party" referencedColumnNames="id"
+                                constraintName="fk_journal_line_party"/>
+        <addForeignKeyConstraint baseTableName="journal_line" baseColumnNames="currency_code"
+                                referencedTableName="currency" referencedColumnNames="code"
+                                constraintName="fk_journal_line_currency"/>
 
-        <!-- Posting -> Tenant, JournalLine, Account, Period -->
+        <!-- Posting -> Tenant, Ledger, JournalEntry, JournalLine, Account, Party, Currency -->
         <addForeignKeyConstraint baseTableName="posting" baseColumnNames="tenant_id"
                                 referencedTableName="tenant" referencedColumnNames="id"
                                 constraintName="fk_posting_tenant"/>
-        <addForeignKeyConstraint baseTableName="posting" baseColumnNames="journal_line_id"
+        <addForeignKeyConstraint baseTableName="posting" baseColumnNames="ledger_id"
+                                referencedTableName="ledger" referencedColumnNames="id"
+                                constraintName="fk_posting_ledger"/>
+        <addForeignKeyConstraint baseTableName="posting" baseColumnNames="entry_id"
+                                referencedTableName="journal_entry" referencedColumnNames="id"
+                                constraintName="fk_posting_journal_entry"/>
+        <addForeignKeyConstraint baseTableName="posting" baseColumnNames="line_id"
                                 referencedTableName="journal_line" referencedColumnNames="id"
                                 constraintName="fk_posting_journal_line"/>
         <addForeignKeyConstraint baseTableName="posting" baseColumnNames="account_id"
                                 referencedTableName="account" referencedColumnNames="id"
                                 constraintName="fk_posting_account"/>
-        <addForeignKeyConstraint baseTableName="posting" baseColumnNames="period_id"
-                                referencedTableName="period" referencedColumnNames="id"
-                                constraintName="fk_posting_period"/>
+        <addForeignKeyConstraint baseTableName="posting" baseColumnNames="party_id"
+                                referencedTableName="party" referencedColumnNames="id"
+                                constraintName="fk_posting_party"/>
+        <addForeignKeyConstraint baseTableName="posting" baseColumnNames="currency_code"
+                                referencedTableName="currency" referencedColumnNames="code"
+                                constraintName="fk_posting_currency"/>
+
+        <!-- BalanceSnapshot -> Tenant, Ledger, Account, Currency -->
+        <addForeignKeyConstraint baseTableName="balance_snapshot" baseColumnNames="tenant_id"
+                                referencedTableName="tenant" referencedColumnNames="id"
+                                constraintName="fk_balance_snapshot_tenant"/>
+        <addForeignKeyConstraint baseTableName="balance_snapshot" baseColumnNames="ledger_id"
+                                referencedTableName="ledger" referencedColumnNames="id"
+                                constraintName="fk_balance_snapshot_ledger"/>
+        <addForeignKeyConstraint baseTableName="balance_snapshot" baseColumnNames="account_id"
+                                referencedTableName="account" referencedColumnNames="id"
+                                constraintName="fk_balance_snapshot_account"/>
+        <addForeignKeyConstraint baseTableName="balance_snapshot" baseColumnNames="currency_code"
+                                referencedTableName="currency" referencedColumnNames="code"
+                                constraintName="fk_balance_snapshot_currency"/>
 
     </changeSet>
 
@@ -326,26 +448,15 @@
         <comment>Add indexes for better query performance</comment>
 
         <!-- Tenant indexes -->
-        <createIndex tableName="tenant" indexName="idx_tenant_code">
-            <column name="code"/>
+        <createIndex tableName="tenant" indexName="idx_tenant_name">
+            <column name="name"/>
         </createIndex>
 
         <!-- Ledger indexes -->
-        <createIndex tableName="ledger" indexName="idx_ledger_tenant_code">
+        <createIndex tableName="ledger" indexName="idx_ledger_tenant">
             <column name="tenant_id"/>
-            <column name="code"/>
         </createIndex>
-        <createIndex tableName="ledger" indexName="idx_ledger_tenant_active">
-            <column name="tenant_id"/>
-            <column name="is_active"/>
-        </createIndex>
-
-        <!-- Party indexes -->
-        <createIndex tableName="party" indexName="idx_party_tenant_type">
-            <column name="tenant_id"/>
-            <column name="type"/>
-        </createIndex>
-        <createIndex tableName="party" indexName="idx_party_tenant_name">
+        <createIndex tableName="ledger" indexName="idx_ledger_tenant_name">
             <column name="tenant_id"/>
             <column name="name"/>
         </createIndex>
@@ -359,6 +470,16 @@
             <column name="ledger_id"/>
             <column name="start_date"/>
             <column name="end_date"/>
+        </createIndex>
+
+        <!-- Party indexes -->
+        <createIndex tableName="party" indexName="idx_party_tenant_type">
+            <column name="tenant_id"/>
+            <column name="type"/>
+        </createIndex>
+        <createIndex tableName="party" indexName="idx_party_tenant_name">
+            <column name="tenant_id"/>
+            <column name="name"/>
         </createIndex>
 
         <!-- Account indexes -->
@@ -375,33 +496,79 @@
         </createIndex>
 
         <!-- JournalEntry indexes -->
-        <createIndex tableName="journal_entry" indexName="idx_journal_entry_ledger_period">
+        <createIndex tableName="journal_entry" indexName="idx_journal_entry_ledger_date">
             <column name="ledger_id"/>
-            <column name="period_id"/>
+            <column name="accounting_date"/>
         </createIndex>
         <createIndex tableName="journal_entry" indexName="idx_journal_entry_status">
             <column name="status"/>
         </createIndex>
-        <createIndex tableName="journal_entry" indexName="idx_journal_entry_date">
-            <column name="entry_date"/>
+        <createIndex tableName="journal_entry" indexName="idx_journal_entry_idempotency">
+            <column name="ledger_id"/>
+            <column name="idempotency_key"/>
+        </createIndex>
+        <createIndex tableName="journal_entry" indexName="idx_journal_entry_sequence">
+            <column name="ledger_id"/>
+            <column name="sequence_no"/>
         </createIndex>
 
         <!-- JournalLine indexes -->
         <createIndex tableName="journal_line" indexName="idx_journal_line_entry">
-            <column name="journal_entry_id"/>
+            <column name="entry_id"/>
         </createIndex>
         <createIndex tableName="journal_line" indexName="idx_journal_line_account">
             <column name="account_id"/>
         </createIndex>
 
         <!-- Posting indexes -->
-        <createIndex tableName="posting" indexName="idx_posting_account_period">
+        <createIndex tableName="posting" indexName="idx_posting_account_date">
+            <column name="tenant_id"/>
+            <column name="ledger_id"/>
             <column name="account_id"/>
-            <column name="period_id"/>
+            <column name="currency_code"/>
+            <column name="accounting_date"/>
         </createIndex>
-        <createIndex tableName="posting" indexName="idx_posting_journal_line">
-            <column name="journal_line_id"/>
+        <createIndex tableName="posting" indexName="idx_posting_journal_entry">
+            <column name="entry_id"/>
         </createIndex>
+
+        <!-- FX_RATE indexes -->
+        <createIndex tableName="fx_rate" indexName="idx_fx_rate_pair_date">
+            <column name="base_code"/>
+            <column name="quote_code"/>
+            <column name="as_of"/>
+        </createIndex>
+
+        <!-- BalanceSnapshot indexes -->
+        <createIndex tableName="balance_snapshot" indexName="idx_balance_snapshot_account_date">
+            <column name="tenant_id"/>
+            <column name="ledger_id"/>
+            <column name="account_id"/>
+            <column name="currency_code"/>
+            <column name="as_of_date"/>
+        </createIndex>
+
+    </changeSet>
+
+    <!-- Add unique constraints -->
+    <changeSet id="004-unique-constraints" author="system">
+        <comment>Add unique constraints for data integrity</comment>
+
+        <!-- Account code must be unique per ledger -->
+        <addUniqueConstraint tableName="account" columnNames="tenant_id, ledger_id, code" 
+                            constraintName="uk_account_ledger_code"/>
+
+        <!-- Journal entry idempotency key must be unique per ledger -->
+        <addUniqueConstraint tableName="journal_entry" columnNames="ledger_id, idempotency_key" 
+                            constraintName="uk_journal_entry_idempotency"/>
+
+        <!-- FX rate must be unique per currency pair and date -->
+        <addUniqueConstraint tableName="fx_rate" columnNames="base_code, quote_code, as_of" 
+                            constraintName="uk_fx_rate_pair_date"/>
+
+        <!-- Balance snapshot must be unique per account, currency and date -->
+        <addUniqueConstraint tableName="balance_snapshot" columnNames="tenant_id, ledger_id, account_id, currency_code, as_of_date" 
+                            constraintName="uk_balance_snapshot_account_date"/>
 
     </changeSet>
 

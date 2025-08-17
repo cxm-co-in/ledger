@@ -34,8 +34,9 @@ public class JournalEntry {
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
 
-    @Column(name = "ledger_id", nullable = false)
-    private UUID ledgerId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ledger_id", nullable = false)
+    private Ledger ledger;
 
     @Column(name = "accounting_date", nullable = false)
     private LocalDate accountingDate;
@@ -85,10 +86,10 @@ public class JournalEntry {
     }
     
     /**
-     * Set the ledger ID for this journal entry.
+     * Set the ledger for this journal entry.
      * This method is needed for service layer operations.
      */
-    public void setLedgerId(UUID ledgerId) {
-        this.ledgerId = ledgerId;
+    public void setLedger(Ledger ledger) {
+        this.ledger = ledger;
     }
 }

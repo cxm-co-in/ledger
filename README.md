@@ -1,212 +1,261 @@
 # General Ledger Application
 
-A Spring Boot-based general ledger system with PostgreSQL database and Liquibase for schema management.
+A comprehensive, multi-currency, double-entry general ledger system built with Spring Boot and PostgreSQL.
 
-## Prerequisites
-- Java 21
-- Docker + Docker Compose
+## Overview
 
-## Quick Start with Docker
+This application implements a production-ready general ledger system with the following key features:
 
-### Option 1: Run Everything with Docker Compose (Recommended)
-```bash
-# Create environment file with defaults
-make env
+- **Double-entry accounting**: Every journal entry balances to zero in the functional currency
+- **Multi-currency support**: Full FX rate management and currency conversion
+- **Multi-tenant architecture**: Complete data isolation between tenants
+- **Audit trail**: Immutable posting records and comprehensive audit logging
+- **Performance optimized**: Balance snapshots for fast reporting and aggregation
 
-# Build and start all services
-make docker-build
+## Architecture
 
-# Or just start existing services
-make docker-up
+### Core Entities
 
-# Stop all services
-make docker-down
+- **Tenant**: Multi-tenant boundary with isolated data
+- **Ledger**: Book of accounts with functional currency and timezone
+- **Account**: Chart of accounts with hierarchical structure
+- **JournalEntry**: Financial transactions composed of journal lines
+- **JournalLine**: Individual debit/credit entries with currency and FX rates
+- **Posting**: Immutable atomic postings for fast aggregation
+- **Currency**: Currency definitions with rounding rules
+- **FxRate**: Exchange rates between currency pairs
+- **BalanceSnapshot**: Pre-aggregated balances for performance
+- **Period**: Accounting periods with status management
+- **Party**: External entities (customers, vendors, employees)
+
+### Key Design Principles
+
+1. **Append-only postings**: Once posted, entries cannot be modified
+2. **Functional currency balancing**: All entries must balance in the ledger's functional currency
+3. **FX rate management**: Comprehensive exchange rate handling with date-based lookups
+4. **Performance optimization**: Balance snapshots for fast reporting
+5. **Data integrity**: Comprehensive validation and constraint enforcement
+
+## Database Schema
+
+The database schema is managed through Liquibase and includes:
+
+- **Proper relationships**: All entities use proper JPA relationships instead of raw UUIDs
+- **Multi-currency support**: FX rates, currency constraints, and conversion logic
+- **Performance indexes**: Optimized for common query patterns
+- **Data integrity**: Foreign key constraints and unique constraints
+- **Audit fields**: Created/updated timestamps on all entities
+
+### Key Schema Features
+
+- **Currency table**: Supports currencies with different decimal places (e.g., JPY has 0 decimals)
+- **FX rates**: Date-based exchange rates with source tracking
+- **Balance snapshots**: Pre-calculated balances for fast reporting
+- **Proper indexing**: Tenant-aware indexes for multi-tenant performance
+
+## API Endpoints
+
+### Journal Entries
+- `POST /api/ledgers/{ledgerId}/journal-entries` - Create journal entry
+- `POST /api/journal-entries/{id}/post` - Post a draft entry
+- `GET /api/journal-entries/{id}` - Get journal entry by ID
+
+### FX Rates
+- `POST /api/fx/rates` - Create/update exchange rate
+- `GET /api/fx/rates` - Get most recent rate for currency pair
+- `GET /api/fx/rates/{baseCode}/{quoteCode}/{asOf}` - Get rate for specific date
+- `GET /api/fx/rates/convert` - Convert amount between currencies
+
+### Accounts
+- `POST /api/ledgers/{ledgerId}/accounts` - Create account
+- `GET /api/ledgers/{ledgerId}/accounts` - List accounts for ledger
+- `PATCH /api/accounts/{id}` - Update account
+
+### Ledgers
+- `POST /api/ledgers` - Create ledger
+- `GET /api/ledgers/{id}` - Get ledger by ID
+- `GET /api/ledgers` - List ledgers for tenant
+
+### Periods
+- `POST /api/periods` - Create new period
+- `GET /api/periods/ledger/{ledgerId}` - Get periods for ledger
+- `GET /api/periods/ledger/{ledgerId}/status/{status}` - Get periods by status
+- `GET /api/periods/ledger/{ledgerId}/open` - Get open period for ledger
+- `POST /api/periods/{id}/close` - Close period
+- `POST /api/periods/{id}/lock` - Lock period
+- `POST /api/periods/{id}/reopen` - Reopen period
+- `GET /api/periods/{id}` - Get period by ID
+
+## Business Logic Implementation
+
+### Journal Entry Posting
+
+The `postJournalEntry` method implements comprehensive business logic:
+
+1. **Validation**:
+   - Account existence and tenant ownership
+   - Account active status
+   - Currency constraints (single vs. multi-currency accounts)
+   - Period status (only OPEN periods allow posting)
+
+2. **FX Conversion**:
+   - Automatic conversion to functional currency
+   - FX rate lookup with fallback to inverse rates
+   - Precision handling with BigDecimal arithmetic
+
+3. **Balancing**:
+   - Functional currency balance validation
+   - Debit/credit equality enforcement
+   - Error handling for unbalanced entries
+
+4. **Posting Creation**:
+   - Immutable posting records
+   - Proper relationship mapping
+   - Sequence number assignment
+
+### FX Rate Management
+
+- **Rate storage**: Date-based exchange rates with source tracking
+- **Rate lookup**: Most recent rate as of a specific date
+- **Conversion logic**: Direct and inverse rate handling
+- **Precision**: BigDecimal arithmetic with proper rounding
+
+### Balance Management
+
+- **Snapshot creation**: Pre-calculated balances for performance
+- **Running balances**: Incremental balance calculations
+- **Multi-currency**: Native and functional currency balances
+
+## Getting Started
+
+### Prerequisites
+
+- Java 17+
+- PostgreSQL 12+
+- Gradle 7+
+
+### Setup
+
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd general-ledger
+   ```
+
+2. **Configure database**:
+   - Create PostgreSQL database
+   - Update `application.yml` with database credentials
+
+3. **Run the application**:
+   ```bash
+   ./gradlew bootRun
+   ```
+
+4. **Initialize data**:
+   - The application will automatically create the schema via Liquibase
+   - Sample currencies (USD, EUR, GBP, etc.) are pre-loaded
+
+### Configuration
+
+Key configuration options in `application.yml`:
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/general_ledger
+    username: your_username
+    password: your_password
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 ```
 
-### Option 2: Use the Start Script (Easiest)
-```bash
-# Make script executable (first time only)
-chmod +x start.sh
+## Development
 
-# Start everything with one command
-./start.sh
+### Project Structure
+
+```
+src/main/java/com/cxm360/ai/ledger/
+├── config/          # Configuration classes
+├── context/         # Tenant context management
+├── controller/      # REST API controllers
+├── dto/            # Data transfer objects
+├── filter/         # HTTP filters
+├── mapper/         # Entity-DTO mappers
+├── model/          # JPA entities
+├── repository/     # Data access layer
+└── service/        # Business logic layer
 ```
 
-### Option 3: Manual Docker Compose
+### Key Components
+
+- **TenantContext**: Thread-local tenant context for multi-tenancy
+- **TenantContextFilter**: HTTP filter for tenant context injection
+- **JsonNodeConverter**: JSON handling for flexible settings storage
+- **Validation**: Comprehensive business rule validation
+
+### Testing
+
+Run tests with:
 ```bash
-# Create environment file
-cp .env.example .env  # or run: make env
-
-# Build and start all services
-docker compose up -d --build
-
-# View logs
-docker compose logs -f
-
-# Stop services
-docker compose down
+./gradlew test
 ```
 
-## Development Setup
+The test suite includes:
+- Unit tests for business logic
+- Integration tests with PostgreSQL
+- Multi-tenant context testing
 
-### 1. Environment Configuration
-```bash
-# Create .env file with default values
-make env
+## Recent Improvements
 
-# Customize .env file as needed:
-# DB_PORT=5432
-# POSTGRES_DB=general_ledger
-# POSTGRES_USER=general_ledger
-# POSTGRES_PASSWORD=general_ledger
-# SPRING_PROFILES_ACTIVE=dev
-# APP_PORT=8080
-# JAVA_OPTS=-Xmx512m -Xms256m
-```
+### Fixed Issues
 
-### 2. Start Services
-```bash
-# Start PostgreSQL only (for local development)
-make docker-up
+1. **Database Schema Alignment**: 
+   - Corrected schema to match design document
+   - Added missing tables (Currency, FxRate, BalanceSnapshot)
+   - Fixed column types and relationships
 
-# Or start everything with Docker
-make docker-build
-```
+2. **Entity Relationships**:
+   - Replaced raw UUIDs with proper JPA relationships
+   - Added missing entity classes
+   - Implemented bidirectional relationship management
 
-### 3. Run Application
-```bash
-# Run with development profile (auto-reload)
-make dev
+3. **Business Logic**:
+   - Complete journal entry posting implementation
+   - FX rate management and currency conversion
+   - Comprehensive validation and error handling
 
-# Run with specific profile
-make run-profile PROFILE=dev
+4. **Performance**:
+   - Added proper database indexes
+   - Implemented balance snapshot strategy
+   - Optimized query patterns
 
-# Run with production profile
-make run
-```
+### New Features
 
-## Docker Services
+- **FX Rate Management**: Complete exchange rate handling
+- **Balance Snapshots**: Pre-calculated balances for reporting
+- **Currency Support**: Multi-currency account management
+- **Period Management**: Accounting period status control
+- **Comprehensive Validation**: Business rule enforcement
 
-The Docker Compose setup includes:
+## Contributing
 
-- **PostgreSQL 16**: Database service with health checks
-- **Ledger App**: Spring Boot application with automatic database connection
-- **Networking**: Isolated network for service communication
-- **Volumes**: Persistent data storage for database and logs
-- **Health Checks**: Ensures services are ready before starting dependent services
+1. Fork the repository
+2. Create a feature branch
+3. Implement changes with tests
+4. Submit a pull request
 
-## Useful Commands
+## License
 
-### Docker Management
-```bash
-make docker-up          # Start all services
-make docker-down        # Stop all services
-make docker-build       # Build and start services
-make docker-rebuild     # Rebuild and restart services
-```
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-### Log Management
-```bash
-# View all service logs (real-time)
-make logs               # Follow all logs
-make logs-tail          # Last 100 lines of all logs
+## Support
 
-# View specific service logs
-make logs-app           # Follow ledger app logs only
-make logs-db            # Follow PostgreSQL logs only
-make logs-app-tail      # Last 100 lines of app logs
-make logs-db-tail       # Last 100 lines of database logs
-
-# Direct Docker Compose commands
-docker compose logs -f postgres          # Follow PostgreSQL logs
-docker compose logs -f ledger            # Follow ledger app logs
-docker compose logs --tail=50 postgres   # Last 50 lines of PostgreSQL
-docker compose logs --since="1h" ledger  # App logs from last hour
-```
-
-### Application Development
-```bash
-make build             # Build the application
-make test              # Run tests
-make dev               # Run with development profile
-make run               # Run with production profile
-make clean             # Clean build artifacts
-```
-
-### Database Management
-```bash
-# Liquibase runs automatically with Spring Boot
-# Check application logs for migration status
-docker compose logs ledger
-```
-
-## Configuration
-
-- **App Config**: `src/main/resources/application.yml` (base configuration)
-- **Profile Configs**: 
-  - `application-dev.yml` (development profile)
-  - `application-prod.yml` (production profile)
-  - `application-test.yml` (test profile)
-- **Database**: Automatically configured via environment variables
-- **Ports**: 
-  - Application: 8080 (configurable via APP_PORT)
-  - PostgreSQL: 5432 (configurable via DB_PORT)
-
-## Troubleshooting
-
-### Service Health Checks
-```bash
-# Check service status
-docker compose ps
-
-# View service logs
-docker compose logs postgres
-docker compose logs ledger
-
-# Check health endpoints
-curl http://localhost:8080/actuator/health
-curl http://localhost:8080/actuator/health/db
-```
-
-### Actuator Endpoints
-The application provides several actuator endpoints for monitoring:
-
-- **`/actuator/health`** - Overall application health status
-- **`/actuator/health/db`** - Database connection health status  
-- **`/actuator/info`** - Application information
-- **`/actuator/env`** - Environment variables
-- **`/actuator/configprops`** - Configuration properties
-
-### Discovering Actuator Endpoints
-```bash
-# List all available endpoints
-make actuator
-
-# Show raw actuator index
-make actuator-raw
-
-# Test specific endpoints
-make health          # Overall health
-make health-db       # Database health
-
-# Direct access
-curl http://localhost:8080/actuator          # Actuator index
-curl http://localhost:8080/actuator/health   # Health status
-curl http://localhost:8080/actuator/info     # App info
-```
-
-### Common Issues
-1. **Port conflicts**: Change ports in `.env` file
-2. **Memory issues**: Adjust `JAVA_OPTS` in `.env` file
-3. **Database connection**: Ensure PostgreSQL is healthy before starting ledger app
-4. **Build issues**: Run `make docker-rebuild` to clean rebuild
-5. **Actuator endpoints not accessible**: Check if the application profile has actuator enabled
-
-### Reset Everything
-```bash
-# Stop and remove all containers, networks, and volumes
-docker compose down -v
-
-# Rebuild from scratch
-make docker-build
-```
+For questions or issues, please:
+1. Check the documentation
+2. Review existing issues
+3. Create a new issue with detailed information
