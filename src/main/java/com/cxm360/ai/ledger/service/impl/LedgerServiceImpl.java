@@ -9,6 +9,8 @@ import com.cxm360.ai.ledger.model.Ledger;
 import com.cxm360.ai.ledger.model.Tenant;
 import com.cxm360.ai.ledger.repository.LedgerRepository;
 import com.cxm360.ai.ledger.repository.TenantRepository;
+import com.cxm360.ai.ledger.model.Currency;
+import com.cxm360.ai.ledger.repository.CurrencyRepository;
 import com.cxm360.ai.ledger.service.LedgerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ public class LedgerServiceImpl implements LedgerService {
     private final LedgerRepository ledgerRepository;
     private final TenantRepository tenantRepository;
     private final LedgerMapper ledgerMapper;
+    private final CurrencyRepository currencyRepository;
 
     @Override
     @Transactional
@@ -42,6 +45,11 @@ public class LedgerServiceImpl implements LedgerService {
         // Create the ledger
         Ledger ledger = ledgerMapper.toEntity(request);
         ledger.setTenant(tenant);
+        
+        // Set the functional currency
+        Currency currency = currencyRepository.findById(request.functionalCurrencyCode())
+                .orElseThrow(() -> new IllegalArgumentException("Currency not found: " + request.functionalCurrencyCode()));
+        ledger.setFunctionalCurrency(currency);
 
         Ledger savedLedger = ledgerRepository.save(ledger);
         return ledgerMapper.toDto(savedLedger);
@@ -95,7 +103,9 @@ public class LedgerServiceImpl implements LedgerService {
             ledger.setName(request.name());
         }
         if (request.functionalCurrencyCode() != null) {
-            ledger.setFunctionalCurrencyCode(request.functionalCurrencyCode());
+            Currency currency = currencyRepository.findById(request.functionalCurrencyCode())
+                    .orElseThrow(() -> new IllegalArgumentException("Currency not found: " + request.functionalCurrencyCode()));
+            ledger.setFunctionalCurrency(currency);
         }
         if (request.timezone() != null) {
             ledger.setTimezone(request.timezone());

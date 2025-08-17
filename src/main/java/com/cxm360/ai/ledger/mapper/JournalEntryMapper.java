@@ -22,7 +22,7 @@ public interface JournalEntryMapper {
     @Mapping(source = "party.id", target = "partyId")
     JournalLineDto toDto(JournalLine journalLine);
 
-    @Mapping(source = "ledgerId", target = "ledgerId")
+    @Mapping(source = "ledger.id", target = "ledgerId")
     JournalEntryDto toDto(JournalEntry journalEntry);
 
 

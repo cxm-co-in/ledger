@@ -3,10 +3,10 @@ package com.cxm360.ai.ledger.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 /**
  * Represents an exchange rate between two currencies as of a specific date.
@@ -20,20 +20,12 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FxRate {
+public class FxRate implements Serializable {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @EmbeddedId
+    private FxRateId id;
 
-    @Column(name = "base_code", nullable = false, length = 3)
-    private String baseCode;
 
-    @Column(name = "quote_code", nullable = false, length = 3)
-    private String quoteCode;
-
-    @Column(name = "as_of", nullable = false)
-    private LocalDate asOf;
 
     @Column(nullable = false, precision = 19, scale = 6)
     private BigDecimal rate;
@@ -47,5 +39,26 @@ public class FxRate {
     @PrePersist
     protected void onCreate() {
         insertedAt = OffsetDateTime.now();
+    }
+    
+    /**
+     * Composite primary key for FxRate.
+     */
+    @Embeddable
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode
+    public static class FxRateId implements Serializable {
+        
+        @Column(name = "base_code", nullable = false, length = 3)
+        private String baseCode;
+        
+        @Column(name = "quote_code", nullable = false, length = 3)
+        private String quoteCode;
+        
+        @Column(name = "as_of", nullable = false)
+        private LocalDate asOf;
     }
 }

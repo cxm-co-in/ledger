@@ -23,7 +23,7 @@ public class FxRateServiceImpl implements FxRateService {
     @Transactional
     public FxRate upsertFxRate(String baseCode, String quoteCode, LocalDate asOf, BigDecimal rate, String source) {
         // Check if rate already exists for this date
-        Optional<FxRate> existingRate = fxRateRepository.findByBaseCodeAndQuoteCodeAndAsOf(baseCode, quoteCode, asOf);
+        Optional<FxRate> existingRate = fxRateRepository.findByIdBaseCodeAndIdQuoteCodeAndIdAsOf(baseCode, quoteCode, asOf);
         
         if (existingRate.isPresent()) {
             // Update existing rate
@@ -32,11 +32,10 @@ public class FxRateServiceImpl implements FxRateService {
             rateToUpdate.setSource(source);
             return fxRateRepository.save(rateToUpdate);
         } else {
-            // Create new rate
+            // Create new rate with composite key
+            FxRate.FxRateId id = new FxRate.FxRateId(baseCode, quoteCode, asOf);
             FxRate newRate = FxRate.builder()
-                    .baseCode(baseCode)
-                    .quoteCode(quoteCode)
-                    .asOf(asOf)
+                    .id(id)
                     .rate(rate)
                     .source(source)
                     .build();
@@ -53,7 +52,7 @@ public class FxRateServiceImpl implements FxRateService {
     @Override
     @Transactional(readOnly = true)
     public Optional<FxRate> getRate(String baseCode, String quoteCode, LocalDate asOf) {
-        return fxRateRepository.findByBaseCodeAndQuoteCodeAndAsOf(baseCode, quoteCode, asOf);
+        return fxRateRepository.findByIdBaseCodeAndIdQuoteCodeAndIdAsOf(baseCode, quoteCode, asOf);
     }
 
     @Override

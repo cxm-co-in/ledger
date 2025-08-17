@@ -17,10 +17,12 @@ public interface LedgerMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "tenant", ignore = true)
+    @Mapping(target = "functionalCurrency", ignore = true)
     Ledger toEntity(CreateLedgerRequest request);
 
     /**
      * Convert a Ledger entity to a LedgerDto.
      */
+    @Mapping(source = "functionalCurrency.code", target = "functionalCurrencyCode")
     LedgerDto toDto(Ledger ledger);
 }

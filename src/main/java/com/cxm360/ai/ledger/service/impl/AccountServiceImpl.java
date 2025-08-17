@@ -6,7 +6,9 @@ import com.cxm360.ai.ledger.dto.CreateAccountRequest;
 import com.cxm360.ai.ledger.dto.UpdateAccountRequest;
 import com.cxm360.ai.ledger.mapper.AccountMapper;
 import com.cxm360.ai.ledger.model.Account;
+import com.cxm360.ai.ledger.model.Ledger;
 import com.cxm360.ai.ledger.repository.AccountRepository;
+import com.cxm360.ai.ledger.repository.LedgerRepository;
 import com.cxm360.ai.ledger.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ public class AccountServiceImpl implements com.cxm360.ai.ledger.service.AccountS
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
     private final TenantRepository tenantRepository;
+    private final LedgerRepository ledgerRepository;
 
     @Override
     @Transactional
@@ -37,7 +40,12 @@ public class AccountServiceImpl implements com.cxm360.ai.ledger.service.AccountS
         // TODO: Add validation: check if ledger exists, check if tenant matches context
 
         Account account = accountMapper.toEntity(request);
-        account.setLedgerId(ledgerId);
+        
+        // Set ledger from context
+        Ledger ledger = ledgerRepository.findById(ledgerId)
+                .orElseThrow(() -> new IllegalArgumentException("Ledger not found: " + ledgerId));
+        account.setLedger(ledger);
+        
         // Set tenant from context
         com.cxm360.ai.ledger.model.Tenant tenant = tenantRepository.findById(currentTenantId)
                 .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + currentTenantId));
@@ -76,7 +84,7 @@ public class AccountServiceImpl implements com.cxm360.ai.ledger.service.AccountS
         }
         
         return accountRepository.findAll().stream()
-                .filter(acc -> acc.getTenant().getId().equals(currentTenantId) && acc.getLedgerId().equals(ledgerId))
+                .filter(acc -> acc.getTenant().getId().equals(currentTenantId) && acc.getLedger().getId().equals(ledgerId))
                 .map(accountMapper::toDto)
                 .collect(Collectors.toList());
     }

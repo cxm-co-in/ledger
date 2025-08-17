@@ -10,6 +10,8 @@ import com.cxm360.ai.ledger.repository.LedgerRepository;
 import com.cxm360.ai.ledger.repository.PeriodRepository;
 import com.cxm360.ai.ledger.repository.TenantRepository;
 import com.cxm360.ai.ledger.service.PeriodService;
+import com.cxm360.ai.ledger.validation.BasicValidationResult;
+import com.cxm360.ai.ledger.validation.PeriodValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,25 +46,23 @@ public class PeriodServiceImpl implements PeriodService {
             throw new IllegalArgumentException("Ledger does not belong to current tenant");
         }
 
-        // Validate name
-        if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("Period name cannot be null or empty");
+        // Use validation framework for business rules
+        BasicValidationResult<PeriodValidator.PeriodCreationRequest> validationResult = 
+                PeriodValidator.validateCreation(ledgerId, name, startDate, endDate, status);
+        
+        if (validationResult.isFailure()) {
+            throw new IllegalArgumentException("Validation failed: " + String.join(", ", validationResult.getErrorsAsList()));
         }
 
-        // Validate date range
-        if (startDate.isAfter(endDate)) {
-            throw new IllegalArgumentException("Start date cannot be after end date");
-        }
-
-        // Check for overlapping periods
+        // Check for overlapping periods using validation framework
         List<Period> existingPeriods = periodRepository.findByTenantIdAndLedgerIdAndStatus(
                 currentTenantId, ledgerId, PeriodStatus.OPEN);
         
-        for (Period existingPeriod : existingPeriods) {
-            if (datesOverlap(startDate, endDate, existingPeriod.getStartDate(), existingPeriod.getEndDate())) {
-                String periodName = existingPeriod.getName() != null ? existingPeriod.getName() : "Unnamed Period";
-                throw new IllegalArgumentException("Period dates overlap with existing period: " + periodName);
-            }
+        BasicValidationResult<List<Period>> overlapValidation = 
+                PeriodValidator.validateNoOverlap(startDate, endDate, existingPeriods);
+        
+        if (overlapValidation.isFailure()) {
+            throw new IllegalArgumentException(overlapValidation.getErrorsAsList().get(0));
         }
 
         // Create new period
@@ -129,8 +129,10 @@ public class PeriodServiceImpl implements PeriodService {
             throw new IllegalArgumentException("Period does not belong to current tenant");
         }
 
-        if (period.getStatus() != PeriodStatus.OPEN) {
-            throw new IllegalStateException("Only OPEN periods can be closed");
+        // Use validation framework
+        BasicValidationResult<Period> validationResult = PeriodValidator.validateCanClose(period);
+        if (validationResult.isFailure()) {
+            throw new IllegalStateException(validationResult.getErrorsAsList().get(0));
         }
 
         period.setStatus(PeriodStatus.CLOSED);
@@ -152,8 +154,10 @@ public class PeriodServiceImpl implements PeriodService {
             throw new IllegalArgumentException("Period does not belong to current tenant");
         }
 
-        if (period.getStatus() != PeriodStatus.CLOSED) {
-            throw new IllegalStateException("Only CLOSED periods can be locked");
+        // Use validation framework
+        BasicValidationResult<Period> validationResult = PeriodValidator.validateCanLock(period);
+        if (validationResult.isFailure()) {
+            throw new IllegalStateException(validationResult.getErrorsAsList().get(0));
         }
 
         period.setStatus(PeriodStatus.LOCKED);
@@ -175,8 +179,10 @@ public class PeriodServiceImpl implements PeriodService {
             throw new IllegalArgumentException("Period does not belong to current tenant");
         }
 
-        if (period.getStatus() == PeriodStatus.LOCKED) {
-            throw new IllegalStateException("LOCKED periods cannot be reopened");
+        // Use validation framework
+        BasicValidationResult<Period> validationResult = PeriodValidator.validateCanReopen(period);
+        if (validationResult.isFailure()) {
+            throw new IllegalStateException(validationResult.getErrorsAsList().get(0));
         }
 
         // Check if there's already an open period
@@ -213,10 +219,5 @@ public class PeriodServiceImpl implements PeriodService {
         return period.isPresent() && period.get().getStatus() == PeriodStatus.OPEN;
     }
 
-    /**
-     * Check if two date ranges overlap.
-     */
-    private boolean datesOverlap(LocalDate start1, LocalDate end1, LocalDate start2, LocalDate end2) {
-        return !start1.isAfter(end2) && !start2.isAfter(end1);
-    }
+
 }

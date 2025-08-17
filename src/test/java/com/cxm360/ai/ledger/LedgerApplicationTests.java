@@ -2,9 +2,11 @@ package com.cxm360.ai.ledger;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
-class LedgerApplicationTests extends PostgresTestBase {
+@ActiveProfiles("test")
+class LedgerApplicationTests {
 
 	@Test
 	void contextLoads() {

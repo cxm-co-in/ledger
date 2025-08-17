@@ -30,7 +30,7 @@ public interface AccountMapper {
      */
     @Mapping(target = "id", ignore = true) // Let DB generate the ID
     @Mapping(target = "tenant", ignore = true) // Should be set by the service from context
-    @Mapping(target = "ledgerId", ignore = true) // Should be set by the service from context
+    @Mapping(target = "ledger", ignore = true) // Should be set by the service from context
     @Mapping(target = "isActive", constant = "true") // Default new accounts to active
     @Mapping(target = "parentAccount", ignore = true) // Handled separately in the service
     Account toEntity(CreateAccountRequest request);

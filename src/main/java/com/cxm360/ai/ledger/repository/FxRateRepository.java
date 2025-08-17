@@ -10,13 +10,13 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 @Repository
-public interface FxRateRepository extends JpaRepository<FxRate, String> {
+public interface FxRateRepository extends JpaRepository<FxRate, FxRate.FxRateId> {
     
     /**
      * Find the most recent exchange rate for a currency pair as of a specific date.
      */
-    @Query("SELECT fr FROM FxRate fr WHERE fr.baseCode = :baseCode AND fr.quoteCode = :quoteCode " +
-           "AND fr.asOf <= :asOf ORDER BY fr.asOf DESC")
+    @Query("SELECT fr FROM FxRate fr WHERE fr.id.baseCode = :baseCode AND fr.id.quoteCode = :quoteCode " +
+           "AND fr.id.asOf <= :asOf ORDER BY fr.id.asOf DESC")
     Optional<FxRate> findMostRecentRate(@Param("baseCode") String baseCode, 
                                        @Param("quoteCode") String quoteCode, 
                                        @Param("asOf") LocalDate asOf);
@@ -24,5 +24,5 @@ public interface FxRateRepository extends JpaRepository<FxRate, String> {
     /**
      * Find an exchange rate for a currency pair on a specific date.
      */
-    Optional<FxRate> findByBaseCodeAndQuoteCodeAndAsOf(String baseCode, String quoteCode, LocalDate asOf);
+    Optional<FxRate> findByIdBaseCodeAndIdQuoteCodeAndIdAsOf(String baseCode, String quoteCode, LocalDate asOf);
 }
