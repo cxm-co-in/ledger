@@ -11,7 +11,9 @@ import com.cxm360.ai.ledger.repository.PeriodRepository;
 import com.cxm360.ai.ledger.repository.TenantRepository;
 import com.cxm360.ai.ledger.service.PeriodService;
 import com.cxm360.ai.ledger.validation.BasicValidationResult;
+import com.cxm360.ai.ledger.validation.FunctionalUtils;
 import com.cxm360.ai.ledger.validation.PeriodValidator;
+import io.vavr.control.Option;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,27 +34,29 @@ public class PeriodServiceImpl implements PeriodService {
     @Override
     @Transactional
     public Period createPeriod(UUID ledgerId, String name, LocalDate startDate, LocalDate endDate, PeriodStatus status) {
-        // Get tenant from context
-        UUID currentTenantId = TenantContext.getCurrentTenant();
-        if (currentTenantId == null) {
-            throw new IllegalStateException("Tenant context not set");
-        }
+        // Get tenant from context using functional approach
+        UUID currentTenantId = FunctionalUtils.requireNonNull(
+            TenantContext.getCurrentTenant(), 
+            "Tenant context not set"
+        );
 
-        // Validate ledger exists and belongs to current tenant
-        Ledger ledger = ledgerRepository.findById(ledgerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Ledger", ledgerId.toString()));
+        // Validate ledger exists and belongs to current tenant using functional approach
+        Ledger ledger = Option.ofOptional(ledgerRepository.findById(ledgerId))
+                .getOrElseThrow(() -> new ResourceNotFoundException("Ledger", ledgerId.toString()));
         
-        if (!ledger.getTenant().getId().equals(currentTenantId)) {
-            throw new IllegalArgumentException("Ledger does not belong to current tenant");
-        }
+        FunctionalUtils.requireTrue(
+            ledger.getTenant().getId().equals(currentTenantId),
+            () -> new IllegalArgumentException("Ledger does not belong to current tenant")
+        );
 
         // Use validation framework for business rules
         BasicValidationResult<PeriodValidator.PeriodCreationRequest> validationResult = 
                 PeriodValidator.validateCreation(ledgerId, name, startDate, endDate, status);
         
-        if (validationResult.isFailure()) {
-            throw new IllegalArgumentException("Validation failed: " + String.join(", ", validationResult.getErrorsAsList()));
-        }
+        FunctionalUtils.requireTrue(
+            validationResult.isSuccess(),
+            () -> new IllegalArgumentException("Validation failed: " + String.join(", ", validationResult.getErrorsAsList()))
+        );
 
         // Check for overlapping periods using validation framework
         List<Period> existingPeriods = periodRepository.findByTenantIdAndLedgerIdAndStatus(
@@ -61,13 +65,14 @@ public class PeriodServiceImpl implements PeriodService {
         BasicValidationResult<List<Period>> overlapValidation = 
                 PeriodValidator.validateNoOverlap(startDate, endDate, existingPeriods);
         
-        if (overlapValidation.isFailure()) {
-            throw new IllegalArgumentException(overlapValidation.getErrorsAsList().get(0));
-        }
+        FunctionalUtils.requireTrue(
+            overlapValidation.isSuccess(),
+            () -> new IllegalArgumentException(overlapValidation.getErrorsAsList().get(0))
+        );
 
-        // Create new period
-        Tenant tenant = tenantRepository.findById(currentTenantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tenant", currentTenantId.toString()));
+        // Create new period using functional approach
+        Tenant tenant = Option.ofOptional(tenantRepository.findById(currentTenantId))
+                .getOrElseThrow(() -> new ResourceNotFoundException("Tenant", currentTenantId.toString()));
 
         Period period = Period.builder()
                 .tenant(tenant)
@@ -117,23 +122,25 @@ public class PeriodServiceImpl implements PeriodService {
     @Override
     @Transactional
     public Period closePeriod(UUID periodId) {
-        UUID currentTenantId = TenantContext.getCurrentTenant();
-        if (currentTenantId == null) {
-            throw new IllegalStateException("Tenant context not set");
-        }
+        UUID currentTenantId = FunctionalUtils.requireNonNull(
+            TenantContext.getCurrentTenant(), 
+            "Tenant context not set"
+        );
 
-        Period period = periodRepository.findById(periodId)
-                .orElseThrow(() -> new ResourceNotFoundException("Period", periodId.toString()));
+        Period period = Option.ofOptional(periodRepository.findById(periodId))
+                .getOrElseThrow(() -> new ResourceNotFoundException("Period", periodId.toString()));
 
-        if (!period.getTenant().getId().equals(currentTenantId)) {
-            throw new IllegalArgumentException("Period does not belong to current tenant");
-        }
+        FunctionalUtils.requireTrue(
+            period.getTenant().getId().equals(currentTenantId),
+            () -> new IllegalArgumentException("Period does not belong to current tenant")
+        );
 
         // Use validation framework
         BasicValidationResult<Period> validationResult = PeriodValidator.validateCanClose(period);
-        if (validationResult.isFailure()) {
-            throw new IllegalStateException(validationResult.getErrorsAsList().get(0));
-        }
+        FunctionalUtils.requireTrue(
+            validationResult.isSuccess(),
+            () -> new IllegalStateException(validationResult.getErrorsAsList().get(0))
+        );
 
         period.setStatus(PeriodStatus.CLOSED);
         return periodRepository.save(period);
