@@ -31,7 +31,7 @@ src/main/resources/
 ```yaml
 spring:
   application:
-    name: general-ledger
+    name: ledger
   
   # Liquibase Configuration
   liquibase:
@@ -154,7 +154,7 @@ Spring Boot loads configuration in this order (highest to lowest priority):
 ### **Properties File (Old Way)**
 ```properties
 # application.properties
-spring.application.name=general-ledger
+spring.application.name=ledger
 spring.liquibase.enabled=true
 spring.liquibase.change-log=classpath:db/changelog/db.changelog-master.xml
 
@@ -168,7 +168,7 @@ logging.level.com.cxm360.ai.ledger=DEBUG
 # application.yml
 spring:
   application:
-    name: general-ledger
+    name: ledger
   
   liquibase:
     enabled: true

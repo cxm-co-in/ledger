@@ -9,7 +9,7 @@ JHOME := $(shell if [ -x "$(BREW)" ]; then "$(BREW)" --prefix openjdk@21 2>/dev/
 # Gradle wrapper invocation pinned to Java 21 for this repo only
 GRADLE := JAVA_HOME="$(JHOME)" PATH="$(JHOME)/bin:$(PATH)" ./gradlew -Dorg.gradle.java.home="$(JHOME)"
 
-.PHONY: help java-path check-java install-java21 build test run clean docker-up docker-down env liquibase-status liquibase-update liquibase-rollback
+.PHONY: help java-path check-java install-java21 build test run clean docker-up docker-down docker-build docker-rebuild env liquibase-status liquibase-update liquibase-rollback
 
 help:
 	@echo "Targets:"
@@ -23,8 +23,10 @@ help:
 	@echo "  watch           Run the app with development profile and auto-reload (continuous)"
 	@echo "  run-profile     Run the app with a custom profile (usage: make run-profile PROFILE=dev)"
 	@echo "  clean           Gradle clean"
-	@echo "  docker-up       Start PostgreSQL via docker compose"
-	@echo "  docker-down     Stop PostgreSQL"
+	@echo "  docker-up       Start PostgreSQL and Ledger app via docker compose"
+	@echo "  docker-down     Stop all services"
+	@echo "  docker-build    Build and start all services"
+	@echo "  docker-rebuild  Rebuild and restart all services"
 	@echo "  env             Create .env from .env.example if missing"
 	@echo ""
 	@echo "Database Management (Liquibase):"
@@ -99,6 +101,13 @@ docker-up:
 docker-down:
 	docker compose down
 
+docker-build: env
+	docker compose up -d --build
+
+docker-rebuild: env
+	docker compose down
+	docker compose up -d --build
+
 env:
 	@if [ ! -f .env ]; then \
 		echo "Creating .env file with default values..."; \
@@ -107,6 +116,8 @@ env:
 		echo "POSTGRES_USER=general_ledger" >> .env; \
 		echo "POSTGRES_PASSWORD=general_ledger" >> .env; \
 		echo "SPRING_PROFILES_ACTIVE=dev" >> .env; \
+		echo "APP_PORT=8080" >> .env; \
+		echo "JAVA_OPTS=-Xmx512m -Xms256m" >> .env; \
 	fi
 	@echo ".env ready"
 

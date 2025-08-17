@@ -17,6 +17,9 @@ RUN chmod +x ./gradlew \
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
+# Install wget for health checks
+RUN apk add --no-cache wget
+
 # Copy the Spring Boot executable jar (exclude the "-plain" jar)
 COPY --from=builder /app/build/libs/*-SNAPSHOT.jar /app/app.jar
 

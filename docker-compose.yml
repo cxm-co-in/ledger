@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: general-ledger-postgres
+    container_name: ledger-postgres
     restart: unless-stopped
     ports:
       - "${DB_PORT:-5432}:5432"
@@ -16,6 +16,42 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - ledger-network
+
+  ledger:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ledger-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-general_ledger}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-general_ledger}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-general_ledger}
+      SERVER_PORT: 8080
+      JAVA_OPTS: ${JAVA_OPTS:-"-Xmx512m -Xms256m"}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    networks:
+      - ledger-network
+    volumes:
+      - app_logs:/app/logs
 
 volumes:
   postgres_data:
+  app_logs:
+
+networks:
+  ledger-network:
+    driver: bridge

@@ -29,3 +29,20 @@ spring:
       enabled: true
       additional-paths: src/main/java
       exclude: static/**,public/**,templates/**
+
+# Actuator Configuration (base configuration for all profiles)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,env,configprops
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: always
+  health:
+    db:
+      enabled: true
+    defaults:
+      enabled: true
