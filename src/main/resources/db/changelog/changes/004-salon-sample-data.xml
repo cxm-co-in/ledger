@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="004-salon-sample-data" author="system">
+        <comment>Insert comprehensive sample data for Glamour Salon &amp; Spa business use case</comment>
+
+        <!-- Insert Salon Tenant -->
+        <insert tableName="tenant">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="name" value="Glamour Salon &amp; Spa"/>
+            <column name="settings" value='{"timezone": "America/New_York", "fiscal_year_start": "01-01", "business_type": "salon", "tax_rate": 8.5, "currency": "USD"}'/>
+        </insert>
+
+        <!-- Insert Salon Ledger -->
+        <insert tableName="ledger">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="name" value="Main Ledger"/>
+            <column name="functional_currency_code" value="USD"/>
+            <column name="timezone" value="America/New_York"/>
+            <column name="settings" value='{"revaluation_method": "PERIOD_END", "rounding_account": "9999-ROUNDING"}'/>
+        </insert>
+
+        <!-- Insert Salon Period -->
+        <insert tableName="period">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440160"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="name" value="Q1 2025"/>
+            <column name="start_date" value="2025-01-01"/>
+            <column name="end_date" value="2025-03-31"/>
+            <column name="status" value="OPEN"/>
+        </insert>
+
+        <!-- Insert Salon Parties (Customers, Vendors, Employees) -->
+        <insert tableName="party">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440170"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="name" value="Sarah Johnson"/>
+            <column name="type" value="CUSTOMER"/>
+            <column name="external_id" value="CUST-001"/>
+            <column name="contact_details" value='{"email": "sarah.j@email.com", "phone": "555-0101", "address": "123 Main St, Anytown, NY"}'/>
+        </insert>
+
+        <insert tableName="party">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440171"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="name" value="Mike Chen"/>
+            <column name="type" value="CUSTOMER"/>
+            <column name="external_id" value="CUST-002"/>
+            <column name="contact_details" value='{"email": "mike.chen@email.com", "phone": "555-0102", "address": "456 Oak Ave, Anytown, NY"}'/>
+        </insert>
+
+        <insert tableName="party">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440172"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="name" value="Professional Beauty Supply Co."/>
+            <column name="type" value="VENDOR"/>
+            <column name="external_id" value="VEND-001"/>
+            <column name="contact_details" value='{"email": "orders@probeauty.com", "phone": "800-555-0123", "address": "789 Supply Blvd, Beauty City, CA"}'/>
+        </insert>
+
+        <insert tableName="party">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440173"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="name" value="Emma Rodriguez"/>
+            <column name="type" value="EMPLOYEE"/>
+            <column name="external_id" value="EMP-001"/>
+            <column name="contact_details" value='{"email": "emma@glamoursalon.com", "phone": "555-0201", "position": "Senior Stylist", "hire_date": "2023-03-15"}'/>
+        </insert>
+
+        <!-- Insert Salon Accounts (Chart of Accounts) -->
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440180"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="1000"/>
+            <column name="name" value="Assets"/>
+            <column name="type" value="ASSET"/>
+            <column name="normal_side" value="DEBIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="null"/>
+        </insert>
+
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440181"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="1100"/>
+            <column name="name" value="Current Assets"/>
+            <column name="type" value="ASSET"/>
+            <column name="normal_side" value="DEBIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="550e8400-e29b-41d4-a716-446655440180"/>
+        </insert>
+
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440182"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="1101"/>
+            <column name="name" value="Cash"/>
+            <column name="type" value="ASSET"/>
+            <column name="normal_side" value="DEBIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="550e8400-e29b-41d4-a716-446655440181"/>
+        </insert>
+
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440183"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="1102"/>
+            <column name="name" value="Checking Account"/>
+            <column name="type" value="ASSET"/>
+            <column name="normal_side" value="DEBIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="550e8400-e29b-41d4-a716-446655440181"/>
+        </insert>
+
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440184"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="1103"/>
+            <column name="name" value="Accounts Receivable"/>
+            <column name="type" value="ASSET"/>
+            <column name="normal_side" value="DEBIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="550e8400-e29b-41d4-a716-446655440181"/>
+        </insert>
+
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440185"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="1104"/>
+            <column name="name" value="Inventory - Products"/>
+            <column name="type" value="ASSET"/>
+            <column name="normal_side" value="DEBIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="550e8400-e29b-41d4-a716-446655440181"/>
+        </insert>
+
+        <!-- Revenue Accounts -->
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440190"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="4000"/>
+            <column name="name" value="Revenue"/>
+            <column name="type" value="REVENUE"/>
+            <column name="normal_side" value="CREDIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="null"/>
+        </insert>
+
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440191"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="4100"/>
+            <column name="name" value="Service Revenue"/>
+            <column name="type" value="REVENUE"/>
+            <column name="normal_side" value="CREDIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="550e8400-e29b-41d4-a716-446655440190"/>
+        </insert>
+
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440192"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="4101"/>
+            <column name="name" value="Hair Services"/>
+            <column name="type" value="REVENUE"/>
+            <column name="normal_side" value="CREDIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="550e8400-e29b-41d4-a716-446655440191"/>
+        </insert>
+
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440193"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="4102"/>
+            <column name="name" value="Nail Services"/>
+            <column name="type" value="REVENUE"/>
+            <column name="normal_side" value="CREDIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="550e8400-e29b-41d4-a716-446655440191"/>
+        </insert>
+
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440194"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="4200"/>
+            <column name="name" value="Product Sales"/>
+            <column name="type" value="REVENUE"/>
+            <column name="normal_side" value="CREDIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="550e8400-e29b-41d4-a716-446655440190"/>
+        </insert>
+
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440195"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="4201"/>
+            <column name="name" value="Hair Products"/>
+            <column name="type" value="REVENUE"/>
+            <column name="normal_side" value="CREDIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="550e8400-e29b-41d4-a716-446655440194"/>
+        </insert>
+
+        <!-- Liability Accounts -->
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440196"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="2000"/>
+            <column name="name" value="Liabilities"/>
+            <column name="type" value="LIABILITY"/>
+            <column name="normal_side" value="CREDIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="null"/>
+        </insert>
+
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440197"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="2100"/>
+            <column name="name" value="Current Liabilities"/>
+            <column name="type" value="LIABILITY"/>
+            <column name="normal_side" value="CREDIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="550e8400-e29b-41d4-a716-446655440196"/>
+        </insert>
+
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440198"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="2101"/>
+            <column name="name" value="Accounts Payable"/>
+            <column name="type" value="LIABILITY"/>
+            <column name="normal_side" value="CREDIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="550e8400-e29b-41d4-a716-446655440197"/>
+        </insert>
+
+        <insert tableName="account">
+            <column name="id" value="550e8400-e29b-41d4-a716-446655440199"/>
+            <column name="tenant_id" value="550e8400-e29b-41d4-a716-446655440100"/>
+            <column name="ledger_id" value="550e8400-e29b-41d4-a716-446655440101"/>
+            <column name="code" value="2102"/>
+            <column name="name" value="Sales Tax Payable"/>
+            <column name="type" value="LIABILITY"/>
+            <column name="normal_side" value="CREDIT"/>
+            <column name="currency_mode" value="SINGLE"/>
+            <column name="currency_code" value="USD"/>
+            <column name="is_active" value="true"/>
+            <column name="parent_account_id" value="550e8400-e29b-41d4-a716-446655440197"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>
