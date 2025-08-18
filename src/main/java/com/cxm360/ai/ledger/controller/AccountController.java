@@ -1,5 +1,6 @@
 package com.cxm360.ai.ledger.controller;
 
+import com.cxm360.ai.ledger.config.ApiConfig;
 import com.cxm360.ai.ledger.dto.AccountDto;
 import com.cxm360.ai.ledger.dto.CreateAccountRequest;
 import com.cxm360.ai.ledger.dto.UpdateAccountRequest;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("${api.base-path}")
 @RequiredArgsConstructor
 public class AccountController {
 

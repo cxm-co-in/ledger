@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/fx/rates")
+@RequestMapping("${api.base-path}/fx/rates")
 @RequiredArgsConstructor
 public class FxRateController {
 

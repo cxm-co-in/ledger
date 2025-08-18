@@ -46,3 +46,7 @@ management:
       enabled: true
     defaults:
       enabled: true
+
+# API Configuration
+api:
+  base-path: /api/v1

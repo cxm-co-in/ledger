@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/periods")
+@RequestMapping("${api.base-path}/periods")
 @RequiredArgsConstructor
 public class PeriodController {
 
