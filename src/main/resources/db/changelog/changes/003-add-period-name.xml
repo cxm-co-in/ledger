@@ -10,8 +10,8 @@
 
         <!-- Add name column to period table -->
         <addColumn tableName="period">
-            <column name="name" type="varchar(255)">
-                <constraints nullable="false" defaultValue="Period"/>
+            <column name="name" type="varchar(255)" defaultValue="Period">
+                <constraints nullable="false"/>
             </column>
         </addColumn>
 
