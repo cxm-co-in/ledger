@@ -14,7 +14,7 @@ import java.util.UUID;
  * Periods can be opened or closed to control transaction posting.
  */
 @Entity
-@Table(name = "periods")
+@Table(name = "period")
 @Getter
 @Setter
 @Builder

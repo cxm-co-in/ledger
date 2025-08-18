@@ -1,8 +1,8 @@
 package com.cxm360.ai.ledger.model;
 
-import com.cxm360.ai.ledger.config.JsonNodeConverter;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.cxm360.ai.ledger.model.Tenant;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import com.cxm360.ai.ledger.model.enums.PartyType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,7 +13,7 @@ import java.util.UUID;
  * Represents a party involved in financial transactions, such as a customer, vendor, or employee.
  */
 @Entity
-@Table(name = "parties")
+@Table(name = "party")
 @Getter
 @Setter
 @Builder
@@ -58,8 +58,8 @@ public class Party {
      * JSON object containing contact details like address, phone number, etc.
      * Using JsonNode for type safety and validation.
      */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "contact_details", columnDefinition = "jsonb") // For PostgreSQL
-    @Convert(converter = JsonNodeConverter.class)
     private JsonNode contactDetails;
 
 }

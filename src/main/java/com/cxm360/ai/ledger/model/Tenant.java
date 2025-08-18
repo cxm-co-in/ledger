@@ -1,9 +1,11 @@
 package com.cxm360.ai.ledger.model;
 
-import com.cxm360.ai.ledger.config.JsonNodeConverter;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.persistence.*;
 import lombok.*;
+
 
 import java.util.UUID;
 
@@ -12,7 +14,7 @@ import java.util.UUID;
  * All other data is scoped to a specific tenant.
  */
 @Entity
-@Table(name = "tenants")
+@Table(name = "tenant")
 @Getter
 @Setter
 @Builder
@@ -27,7 +29,7 @@ public class Tenant {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    @Convert(converter = JsonNodeConverter.class)
     private JsonNode settings;
 }

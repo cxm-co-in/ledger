@@ -14,7 +14,7 @@ import java.util.UUID;
  * A collection of postings is generated when a JournalEntry is posted.
  */
 @Entity
-@Table(name = "postings", indexes = {
+@Table(name = "posting", indexes = {
         @Index(name = "idx_posting_account_date", columnList = "tenant_id, ledger_id, account_id, accounting_date")
 })
 @Getter

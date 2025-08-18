@@ -16,7 +16,7 @@ import java.util.UUID;
  * This is the primary record of a financial transaction.
  */
 @Entity
-@Table(name = "journal_entries", indexes = {
+@Table(name = "journal_entry", indexes = {
         @Index(name = "idx_journal_entry_idempotency_key", columnList = "idempotency_key", unique = true)
 })
 @Getter

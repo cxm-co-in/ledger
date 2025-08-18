@@ -14,7 +14,7 @@ import java.util.UUID;
  * An account is where financial transactions are recorded.
  */
 @Entity
-@Table(name = "accounts")
+@Table(name = "account")
 @Getter
 @Setter
 @Builder

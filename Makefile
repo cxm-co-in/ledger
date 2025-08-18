@@ -17,14 +17,16 @@ help:
 	@echo "  java-path       Print detected Java 21 home path"
 	@echo "  build           Clean build using Java 21 only for this repo"
 	@echo "  test            Run tests using Java 21 only for this repo"
-	@echo "  run             Run the app with production profile (bootRun)"
-	@echo "  run-env         Run the app with profile from .env file"
-	@echo "  dev             Run the app with development profile and auto-reload"
+	@echo "  run             Run the app with production profile (bootRun + postgres only)"
+	@echo "  run-env         Run the app with profile from .env file (bootRun + postgres only)"
+	@echo "  dev             Run the app with development profile and auto-reload (bootRun + postgres only)"
 	@echo "  watch           Run the app with development profile and auto-reload (continuous)"
 	@echo "  run-profile     Run the app with a custom profile (usage: make run-profile PROFILE=dev)"
 	@echo "  clean           Gradle clean"
-	@echo "  docker-up       Start PostgreSQL and Ledger app via docker compose"
+	@echo "  docker-up       Start PostgreSQL and Ledger app via docker compose (full Docker deployment)"
+	@echo "  docker-up-db    Start only PostgreSQL via docker compose (for local development)"
 	@echo "  docker-down     Stop all services"
+	@echo "  docker-down-db  Stop only PostgreSQL service"
 	@echo "  docker-build    Build and start all services"
 	@echo "  docker-rebuild  Rebuild and restart all services"
 	@echo "  env             Create .env from .env.example if missing"
@@ -81,24 +83,24 @@ build: check-java
 test: check-java
 	$(GRADLE) test
 
-run: check-java env docker-up
+run: check-java env docker-up-db
 	@echo "Starting application with production profile..."
 	$(GRADLE) bootRun --args="--spring.profiles.active=prod"
 
-run-env: check-java env docker-up
+run-env: check-java env docker-up-db
 	@echo "Starting application with profile from .env file..."
 	$(GRADLE) bootRun
 
 .PHONY: dev watch run-profile
-dev: check-java env docker-up
+dev: check-java env docker-up-db
 	@echo "Starting application with development profile and auto-reload..."
 	$(GRADLE) bootRun --continuous --args="--spring.profiles.active=dev"
 
-watch: check-java env docker-up
+watch: check-java env docker-up-db
 	@echo "Starting application with development profile and auto-reload (continuous mode)..."
 	$(GRADLE) bootRun --continuous --args="--spring.profiles.active=dev"
 
-run-profile: check-java env docker-up
+run-profile: check-java env docker-up-db
 	@if [ -z "$(PROFILE)" ]; then \
 		echo "Error: PROFILE not specified. Usage: make run-profile PROFILE=dev"; \
 		exit 1; \
@@ -141,6 +143,13 @@ logs-app-tail:
 logs-db-tail:
 	docker compose logs --tail=100 postgres
 
+# Database-only commands
+docker-up-db:
+	docker compose up -d postgres
+
+docker-down-db:
+	docker compose stop postgres
+
 # Actuator endpoint discovery
 actuator:
 	@echo "🔍 Available Actuator Endpoints:" && \
@@ -178,16 +187,16 @@ env:
 	@echo ".env ready"
 
 # Liquibase Commands
-liquibase-status: check-java env docker-up
+liquibase-status: check-java env docker-up-db
 	@echo "Liquibase runs automatically with Spring Boot"
 	@echo "To check status, run the application and check logs"
 	@echo "Or connect to database and check DATABASECHANGELOG table"
 
-liquibase-update: check-java env docker-up
+liquibase-update: check-java env docker-up-db
 	@echo "Liquibase updates automatically when application starts"
 	@echo "Run 'make run' or 'make dev' to start the application"
 
-liquibase-rollback: check-java env docker-up
+liquibase-rollback: check-java env docker-up-db
 	@echo "Manual rollback not available with Spring Boot auto-execution"
 	@echo "To rollback, manually update DATABASECHANGELOG table in database"
 

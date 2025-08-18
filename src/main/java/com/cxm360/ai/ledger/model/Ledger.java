@@ -1,7 +1,8 @@
 package com.cxm360.ai.ledger.model;
 
-import com.cxm360.ai.ledger.config.JsonNodeConverter;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import com.cxm360.ai.ledger.model.Tenant;
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,7 +14,7 @@ import java.util.UUID;
  * It defines the functional currency and timezone for all its accounts and entries.
  */
 @Entity
-@Table(name = "ledgers")
+@Table(name = "ledger")
 @Getter
 @Setter
 @Builder
@@ -59,8 +60,8 @@ public class Ledger {
      * A JSON object for ledger-specific settings and policies,
      * such as revaluation methods or default rounding accounts.
      */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    @Convert(converter = JsonNodeConverter.class)
     private JsonNode settings;
 
 }

@@ -14,7 +14,7 @@ import java.util.UUID;
  * Each line records a debit or a credit to a specific account.
  */
 @Entity
-@Table(name = "journal_lines")
+@Table(name = "journal_line")
 @Getter
 @Setter
 @Builder
